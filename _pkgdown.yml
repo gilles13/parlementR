@@ -1,0 +1,20 @@
+url: https://gilles13.github.io/parlementR/
+template:
+  bootstrap: 5
+navbar:
+  structure:
+    left: [reference, articles]
+    right: [github]
+  components:
+    articles:
+      text: Guide
+      menu:
+      - text: À propos
+        href: articles/apropos.html
+      - text: Documentation des sources
+        href: articles/documentation.html
+articles:
+- title: Guide
+  contents:
+  - apropos
+  - documentation

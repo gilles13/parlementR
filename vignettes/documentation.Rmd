@@ -1,0 +1,19 @@
+---
+title: "Documentation des sources"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Documentation des sources}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Cette page centralise la documentation technique de chaque source intégrée à `parlementR`. Les fiches de référence sont versionnées avec le code, pour pouvoir retrouver les transformations et adapter l'importation lorsqu'un fournisseur modifie ses fichiers.
+
+## Assemblée nationale
+
+### AMO10 — Députés en exercice, mandats et organes
+
+- [Documentation complète AMO10](https://github.com/gilles13/parlementR/blob/main/inst/documentation/AMO10.md) : provenance, archives et XSD, structure JSON, import DuckDB, contrôles et maintenance.
+- [Inventaire des champs JSON AMO10](https://github.com/gilles13/parlementR/blob/main/inst/documentation/AMO10_champs.csv) : chemins observés, types et fréquences.
+
+Les liens pointent vers les documents de référence dans le dépôt GitHub ; ils restent consultables indépendamment de la construction du site. Les prochaines sources seront ajoutées ici à mesure de leur intégration.

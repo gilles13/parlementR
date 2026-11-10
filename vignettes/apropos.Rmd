@@ -1,0 +1,21 @@
+---
+title: "À propos de parlementR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{À propos de parlementR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+`parlementR` vise à faciliter l'étude des travaux parlementaires français à partir des données ouvertes officielles. Il conserve les documents sources complets dans DuckDB, puis permet de construire des analyses reproductibles et, à terme, des documents PDF retraçant le parcours des textes et les débats.
+
+La démarche est progressive : une source à la fois, avec un importateur contrôlé et une documentation détaillée permettant de comprendre les traitements et de les maintenir si les formats évoluent.
+
+## Sources de données ouvertes
+
+- [Assemblée nationale — données ouvertes](https://data.assemblee-nationale.fr/)
+- [Sénat — données ouvertes](https://data.senat.fr/)
+- [Légifrance — données ouvertes et API](https://www.legifrance.gouv.fr/contenu/menu/partenaires/open-data-et-api)
+- [data.gouv.fr — catalogue national](https://www.data.gouv.fr/)
+
+La première source intégrée est **AMO10**, relative aux députés en exercice, leurs mandats et organes associés. La présence d'un lien ci-dessus ne signifie pas que la source est déjà importée par le package.

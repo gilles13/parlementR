@@ -1,0 +1,17 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=2.5cm,bottom=2cm"
+fontsize: 10pt
+params:
+  titre: "Document parlementaire"
+  sous_titre: ""
+---
+
+# `r params$titre`
+
+`r params$sous_titre`
+
+<!-- Modèle minimal : chaque futur document pourra préciser ses propres sections. -->

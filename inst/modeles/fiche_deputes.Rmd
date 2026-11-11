@@ -1,0 +1,87 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+    keep_tex: false
+geometry: "a4paper,left=1.5cm,right=1.5cm,top=1.7cm,bottom=1.5cm"
+fontsize: 9pt
+params:
+  tableaux: !r list()
+  total: 0
+  synthese: !r data.frame()
+header-includes:
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage{graphicx}
+  - \usepackage[table]{xcolor}
+  - \definecolor{parlementBleu}{HTML}{17365D}
+  - \definecolor{parlementClair}{HTML}{EAF0F6}
+  - \setlength{\LTleft}{0pt}
+  - \setlength{\LTright}{0pt}
+---
+
+```{r entete, echo=FALSE, results='asis'}
+logo = system.file("assets", "logo_hexa.png", package = "parlementR")
+if (!nzchar(logo)) stop("Logo hexa introuvable.")
+cat("\\noindent\\begin{tabular*}{\\textwidth}{@{}p{0.78\\textwidth}@{\\extracolsep{\\fill}}r@{}}\n",
+    "{\\Large\\bfseries Députés par groupe parlementaire}\\par\\vspace{3pt}\n",
+    "XVIIe législature — ", params$total, " députés — Édition du ",
+    format(Sys.Date(), "%d/%m/%Y"),
+    " & \\raisebox{-0.7\\height}{\\includegraphics[width=1.13cm]{", logo, "}}\\\\\n",
+    "\\end{tabular*}\n\\par\\medskip\\hrule\\medskip\n\n", sep = "")
+```
+
+```{r synthese, echo=FALSE, results='asis'}
+s = params$synthese
+s = s[order(-s$Deputes, s$Groupe), , drop = FALSE]
+part = if (params$total > 0L) 100 * s$Deputes / params$total else rep(0, nrow(s))
+barres = sprintf("BARRE%03d", seq_len(nrow(s)))
+tab = data.frame(
+  Groupe = s$Groupe,
+  Députés = s$Deputes,
+  `Part (%)` = sprintf("%.1f", part),
+  Répartition = barres,
+  check.names = FALSE
+)
+cat("\\begin{center}\n",
+    "{\\Large\\bfseries\\color{parlementBleu} Composition de l'Assemblée}\\par\\bigskip\n",
+    "{\\Huge\\bfseries ", params$total, "}\\par\n",
+    "{\\small députés répartis dans ", nrow(s), " groupes ou catégories}\\par\\bigskip\n",
+    sep = "")
+latex = knitr::kable(tab, format = "latex", booktabs = TRUE,
+                     row.names = FALSE, escape = TRUE, align = c("l", "r", "r", "l"))
+for (i in seq_along(barres)) {
+  largeur = if (max(s$Deputes) > 0) 4.0 * s$Deputes[i] / max(s$Deputes) else 0
+  barre = sprintf("\\textcolor{parlementBleu}{\\rule{%.3fcm}{1.6mm}}", largeur)
+  latex = gsub(barres[i], barre, latex, fixed = TRUE)
+}
+cat("\\begingroup\\renewcommand{\\arraystretch}{1.45}\\small\n",
+    latex, "\n\\endgroup\n\\end{center}\n", sep = "")
+```
+
+```{r groupes, echo=FALSE, results='asis'}
+for (i in seq_along(params$tableaux)) {
+  cat("\\clearpage\n\n")
+  nom = names(params$tableaux)[i]
+  tab = params$tableaux[[i]]
+  cat("\\section*{\\detokenize{", nom, "}}\n\n", sep = "")
+  cat(nrow(tab), " députés\n\n", sep = "")
+  cat("\\begingroup\\footnotesize\n")
+  latex = knitr::kable(tab, format = "latex", booktabs = TRUE,
+                       longtable = TRUE, row.names = FALSE, escape = TRUE)
+  colonnes = if (ncol(tab) == 3L) "p{5.3cm}p{4.7cm}p{5.5cm}" else "p{7.5cm}p{8cm}"
+  lignes = strsplit(latex, "\n", fixed = TRUE)[[1]]
+  lignes[startsWith(lignes, "\\begin{longtable}{")] = paste0("\\begin{longtable}{", colonnes, "}")
+  # Un en-tete longtable explicite sur les pages suivantes.
+  if (!any(grepl("\\endhead", lignes, fixed = TRUE))) {
+    milieu = which(lignes == "\\midrule")[1]
+    haut = which(lignes == "\\toprule")[1]
+    if (is.na(milieu) || is.na(haut) || milieu <= haut) stop("En-tete longtable inattendu.")
+    en_tete = lignes[haut:milieu]
+    lignes = append(lignes, c("\\endfirsthead", en_tete, "\\endhead"), after = milieu)
+  }
+  cat(paste(lignes, collapse = "\n"), sep = "\n")
+  cat("\n\\endgroup\n\n")
+}
+```

@@ -2,6 +2,7 @@
 #'
 #' Dessine le logo, le titre et une ligne de separation sur la page grid
 #' courante. Ne cree pas de nouvelle page et ne ferme pas le peripherique.
+#' @keywords internal
 #' @param titre Titre du document.
 #' @param sous_titre Texte facultatif sous le titre.
 #' @param logo Afficher le logo du package.

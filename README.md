@@ -32,3 +32,16 @@ Les archives sont mises en cache dans `tools::R_user_dir("parlementR", "cache")`
 - [AMO10](inst/documentation/AMO10.md) et [inventaire de ses champs JSON](inst/documentation/AMO10_champs.csv).
 
 Site du package : <https://gilles13.github.io/parlementR/> (après publication via pkgdown).
+
+Deuxième source : **dossiers législatifs** (`actualiser(db, jeux = "dossiers")`), dans le schéma `an_dossiers`. [Documentation](inst/documentation/Dossiers_legislatifs.md) et [inventaire JSON](inst/documentation/Dossiers_legislatifs_champs.csv).
+
+## Amendements et rapports thématiques
+
+```r
+actualiser(db, jeux = "amendements")
+x = rapport_legislatif(db, "logement", pdf = FALSE)
+rapport_legislatif(db, "logement")
+```
+
+L'import utilise l'archive JSON officielle de la XVIIe législature, conservée
+en cache. Les recherches et la génération PDF ne font aucun appel réseau.

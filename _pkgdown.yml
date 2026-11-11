@@ -11,10 +11,56 @@ navbar:
       menu:
       - text: À propos
         href: articles/apropos.html
+      - text: Comprendre la vie parlementaire
+        href: articles/comprendre-vie-parlementaire.html
       - text: Documentation des sources
         href: articles/documentation.html
+      - text: La DILA
+        href: articles/dila.html
 articles:
 - title: Guide
   contents:
   - apropos
+  - comprendre-vie-parlementaire
   - documentation
+  - dila
+
+reference:
+- title: Donnees et connexions
+  contents:
+  - connexion
+  - fermer_base
+  - actualiser
+- title: Analyses et rapports
+  contents:
+  - fiche_deputes
+  - rapport_legislatif
+
+- title: Sénateurs
+  contents:
+  - importer_senateurs
+  - senateurs_synthese
+  - produire_senateurs
+  - fiche_senateur
+  - produire_fiche_senateur
+
+- title: Importation des données législatives
+  contents:
+  - importer_dole
+  - importer_dosleg
+
+- title: Recherche et documentation des dossiers
+  contents:
+  - rechercher_dossiers
+  - produire_sujets
+  - produire_dossier
+
+- title: Questions du Sénat
+  contents:
+  - importer_questions
+  - lister_themes
+  - rechercher_questions
+  - consulter_question
+  - produire_questions
+  - produire_question
+  - shiny_senat_question

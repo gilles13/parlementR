@@ -1,0 +1,74 @@
+---
+title: "Rapport législatif"
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: margin=1.8cm
+fontsize: 10pt
+header-includes:
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+params:
+  sujet: ""
+  dossiers: !r data.frame()
+  documents: !r data.frame()
+  amendements: !r data.frame()
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+**Sujet :** `r params$sujet`  
+**Édition :** `r format(Sys.Date(), "%d/%m/%Y")`  
+**Source :** Assemblée nationale, archives JSON importées localement.
+
+## Synthèse du corpus
+
+- Dossiers sélectionnés : `r nrow(params$dossiers)`
+- Notices de documents rattachées : `r nrow(params$documents)`
+- Amendements reliés par référence de texte : `r nrow(params$amendements)`
+
+Les effectifs décrivent le contenu de la base locale, et non l'ensemble de la procédure parlementaire.
+
+## Dossiers législatifs
+
+```{r dossiers, results='asis'}
+for (i in seq_len(nrow(params$dossiers))) {
+  d = params$dossiers[i, ]
+  cat("### ", ifelse(is.na(d$titre), d$uid, d$titre), "
+
+", sep = "")
+  cat("UID : `", d$uid, "` — Législature : ",
+      ifelse(is.na(d$legislature), "non renseignée", d$legislature), "
+
+", sep = "")
+  docs = params$documents[params$documents$dossier_uid == d$uid, , drop = FALSE]
+  cat("**Documents liés :** ", nrow(docs), "
+
+", sep = "")
+  if (nrow(docs)) {
+    t = data.frame(Document = docs$document_uid,
+                   Titre = ifelse(is.na(docs$titre), "", docs$titre))
+    cat(knitr::kable(t, format = "latex", booktabs = TRUE,
+                     longtable = TRUE, linesep = ""), "
+
+")
+  }
+}
+```
+
+## Amendements reliés
+
+```{r amendements, results='asis'}
+a = params$amendements
+if (!nrow(a)) {
+  cat("Aucun amendement relié par la référence documentaire disponible dans la base.
+")
+} else {
+  t = data.frame(UID = a$uid, Numéro = a$numero,
+                 Sort = a$sort, Texte = a$texte_ref)
+  cat(knitr::kable(t, format = "latex", booktabs = TRUE,
+                   longtable = TRUE, linesep = ""))
+}
+```

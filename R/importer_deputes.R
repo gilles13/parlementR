@@ -1,6 +1,6 @@
 .importer_deputes = function(db,
                              cache = tools::R_user_dir("parlementR", "cache"),
-                             archive = NULL, verbose = TRUE) {
+                             archive = NULL, verbose = TRUE, forcer = FALSE) {
   journal = function(...) if (isTRUE(verbose)) message("[AMO10] ", ...)
 
   url = paste0(
@@ -13,7 +13,7 @@
 
   if (is.null(archive)) {
     archive = file.path(dossier_cache, basename(url))
-    if (!file.exists(archive)) {
+    if (forcer || !file.exists(archive)) {
       journal("Telechargement de l'archive")
       partiel = paste0(archive, ".part")
       on.exit(unlink(partiel), add = TRUE)
@@ -23,6 +23,7 @@
                         stdout = if (verbose) "" else FALSE,
                         stderr = if (verbose) "" else FALSE)
       if (!identical(as.integer(statut), 0L)) stop("Echec du telechargement AMO10")
+      if (file.exists(archive)) unlink(archive)
       if (!file.rename(partiel, archive)) stop("Impossible de conserver l'archive")
     } else journal("Archive deja presente dans le cache")
   }
@@ -41,7 +42,7 @@
       any(!familles %in% sub("^json/([^/]+)/.*$", "\\1", json))) {
     stop("Organisation inattendue du ZIP AMO10")
   }
-  attendus = setNames(vapply(familles, function(f) {
+  attendus = stats::setNames(vapply(familles, function(f) {
     sum(startsWith(json, paste0("json/", f, "/")))
   }, integer(1)), familles)
   journal("Inventaire : ", paste(names(attendus), attendus, collapse = ", "))
@@ -81,7 +82,7 @@
         "FROM read_text(", motif_sql, ")"
       )
       DBI::dbExecute(db, sql)
-      controle = DBI::dbGetQuery(db, paste0(
+      controle = .db_get_tibble(db, paste0(
         "SELECT count(*) AS n, count(DISTINCT uid) AS distincts, ",
         "count(*) FILTER (WHERE uid IS NULL) AS absents, ",
         "count(*) FILTER (WHERE json_type(contenu, '$.", famille,

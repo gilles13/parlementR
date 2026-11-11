@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>parlementR — Cheatsheet</title><style>
+
+@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}
+:root{--bleu:#2F6B9A;--turquoise:#2A9D8F;--corail:#E76F51;--encre:#18344E;--neutre:#59636E}
+html,body{margin:0;padding:0;background:#e9edf0;color:#1f2b35;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{width:281mm;min-height:194mm;margin:8mm auto;background:#fff;padding:8mm 9mm 6mm;box-shadow:0 3px 20px #0002;position:relative}
+.entete{height:15mm;display:grid;grid-template-columns:14mm 1fr 14mm;align-items:center;border-bottom:2px solid var(--bleu);padding-bottom:2mm;margin-bottom:4mm}
+ .logo-hexa{display:block;max-width:12mm;max-height:12mm;object-fit:contain}.logo-hexa{justify-self:end}
+.titre{text-align:center}.titre h1{font-size:18pt;line-height:1;margin:0;color:var(--encre)}.titre p{font-size:9pt;margin:2mm 0 0;color:var(--neutre);font-weight:600}
+.colonnes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4.5mm;align-items:start}.colonne{display:flex;flex-direction:column;gap:2.5mm;min-width:0}
+.partie{margin:0;padding:2mm 3mm;color:#fff;font-size:11pt;line-height:1.2;text-align:center;border-radius:2mm}.decouvrir>.partie{background:#2676A8}.comprendre>.partie{background:#B77A20}.exercer>.partie{background:#25856C}
+.bloc{break-inside:avoid;border:1px solid #d9e0e5;border-radius:3mm;padding:3mm 3.4mm;background:#fff}
+.bloc h2{font-size:11pt;line-height:1.1;margin:0 0 1.5mm;color:var(--encre)}.bloc p{font-size:8pt;line-height:1.35;margin:0 0 2mm;color:#52606b}
+pre{margin:0;background:#f3f6f8;border:0;border-radius:1.3mm;padding:2mm 2.3mm;white-space:pre-wrap;overflow-wrap:anywhere}
+code{font-family:Consolas,"Liberation Mono",monospace;font-size:7.2pt;line-height:1.3;color:#17324a}
+.bulles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4.5mm;margin-top:3mm}.bulles .bloc{padding:2mm 3.4mm}.bulles .bloc p{margin:0}
+.manifeste{border:1px solid #d9e0e5;background:#fff}.manifeste h2{color:var(--encre)}
+.contribuer{border:1px solid #d9e0e5;background:#fff}.contribuer h2{color:var(--encre)}
+.transparent-progressif{background:linear-gradient(90deg,rgba(104,118,128,.88) 0%,rgba(104,118,128,.40) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pied{position:absolute;left:9mm;right:9mm;bottom:4mm;display:flex;justify-content:space-between;border-top:1px solid #dce2e6;padding-top:2mm;font-size:7pt;color:#687680}
+@media print{.partie{-webkit-print-color-adjust:exact;print-color-adjust:exact}html,body{background:white}.page{margin:0;width:auto;min-height:194mm;box-shadow:none}}
+@media screen and (max-width:1000px){.page{width:auto;min-height:0;margin:0;padding:18px}.entete{height:auto;grid-template-columns:40px 1fr 40px} .logo-hexa{max-width:35px;max-height:35px}.titre{text-align:left;padding:10px 0}.colonnes{grid-template-columns:1fr}.bulles{grid-template-columns:1fr}.pied{position:static;margin-top:18px}}
+
+
+/* Adaptations compactes de la cheatsheet parlementR */
+.page{height:194mm;min-height:194mm;overflow:hidden}
+.colonne{gap:1.7mm}.bloc{padding:2mm 2.5mm}.bloc h2{font-size:9pt;margin-bottom:.7mm}.bloc p{font-size:7.2pt;margin-bottom:1mm;line-height:1.22}pre{padding:1.2mm 1.7mm}code{font-size:6.6pt;line-height:1.24}.partie{font-size:10pt;padding:1.6mm}
+@media print{.page{height:194mm;min-height:194mm}}
+</style></head><body><main class="page">
+<header class="entete"><span aria-hidden="true"></span><div class="titre"><h1>parlementR · Cheatsheet</h1><p>Explorer les données parlementaires françaises avec R</p></div><img class="logo-hexa" src="{{HEXA}}" alt="Logo assembleer"></header>
+<div class="colonnes">
+<div class="colonne decouvrir"><h2 class="partie">Actualiser</h2>
+<section class="bloc"><h2>Démarrer</h2><p>Ouvrir la base locale.</p><pre><code>library(parlementR)
+db = connexion()</code></pre></section>
+<section class="bloc"><h2>Mettre à jour</h2><p>Actualiser les jeux disponibles.</p><pre><code>actualiser(db = db)</code></pre></section>
+<section class="bloc"><h2>Importer les dossiers</h2><p>Charger une archive officielle.</p><pre><code>importer_dosleg(db = db, archive = archive)</code></pre></section>
+<section class="bloc"><h2>Importer les questions</h2><p>Charger les questions du Sénat.</p><pre><code>importer_questions(archive = archive, db = db)</code></pre></section>
+<section class="bloc"><h2>Importer Dole</h2><p>Alimenter les données locales.</p><pre><code>importer_dole(db = db)</code></pre></section>
+<section class="bloc"><h2>Fermer la base</h2><p>Libérer la connexion locale.</p><pre><code>fermer_base()</code></pre></section>
+</div>
+<div class="colonne comprendre"><h2 class="partie">Explorer</h2>
+<section class="bloc"><h2>Parlementaires</h2><p>Consulter députés et sénateurs.</p><pre><code>fiche_deputes(db = db)
+fiche_senateur(nom = &quot;Dupont&quot;, db = db)</code></pre></section>
+<section class="bloc"><h2>Dossiers législatifs</h2><p>Rechercher des textes parlementaires.</p><pre><code>rechercher_dossiers(&quot;logement&quot;, db = db)</code></pre></section>
+<section class="bloc"><h2>Thèmes du Sénat</h2><p>Lister les thèmes officiels.</p><pre><code>lister_themes(db = db)</code></pre></section>
+<section class="bloc"><h2>Questions écrites</h2><p>Rechercher puis consulter une question.</p><pre><code>q = rechercher_questions(&quot;logement&quot;, db = db)
+consulter_question(q$id[[1]], db = db)</code></pre></section>
+<section class="bloc"><h2>Explorer dans Shiny</h2><p>Afficher un tableau interactif.</p><pre><code>shiny_senat_question(db = db)</code></pre></section>
+</div>
+<div class="colonne exercer"><h2 class="partie">Produire</h2>
+<section class="bloc"><h2>Fiche de sénateur</h2><p>Créer une fiche PDF individuelle.</p><pre><code>produire_fiche_senateur(&quot;Dupont&quot;, db = db)</code></pre></section>
+<section class="bloc"><h2>Dossier législatif</h2><p>Créer le PDF d’un dossier identifié.</p><pre><code>produire_dossier(uid = uid, db = db)</code></pre></section>
+<section class="bloc"><h2>Rapport législatif</h2><p>Produire un rapport thématique.</p><pre><code>rapport_legislatif(db = db, sujet = &quot;logement&quot;)</code></pre></section>
+<section class="bloc"><h2>Question du Sénat</h2><p>Créer le PDF d’une question.</p><pre><code>produire_question(id = id, db = db)</code></pre></section>
+<section class="bloc"><h2>Ensemble de questions</h2><p>Créer un PDF par sujet.</p><pre><code>produire_questions(&quot;logement&quot;, db = db)</code></pre></section>
+<section class="bloc"><h2>Synthèse thématique</h2><p>Produire un document sur un sujet.</p><pre><code>produire_sujets(&quot;logement&quot;, db = db)</code></pre></section>
+</div>
+</div>
+<footer class="pied"><span><strong>parlementR</strong> · données parlementaires locales</span><span>parlementR · aide-mémoire</span></footer>
+</main></body></html>

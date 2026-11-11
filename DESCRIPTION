@@ -3,10 +3,11 @@ Title: Donnees ouvertes parlementaires francaises
 Version: 0.0.1
 Authors@R: person("Gilles", "FIDANI", role = c("aut", "cre"), email = "gillesfidani@gmail.com")
 Description: Importe et conserve les donnees ouvertes parlementaires dans DuckDB.
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
-Imports: DBI, duckdb, png, grid
-Suggests: testthat, knitr, rmarkdown, pkgdown
+Imports: DBI, duckdb, png, grid, dplyr, tibble
+Suggests: testthat, knitr, rmarkdown, pkgdown, shiny, DT, assembleer
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

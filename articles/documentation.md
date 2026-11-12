@@ -1,0 +1,221 @@
+# Documentation des sources
+
+Cette page centralise la documentation technique de chaque source
+intégrée à `parlementR`. Les fiches de référence sont versionnées avec
+le code, pour pouvoir retrouver les transformations et adapter
+l’importation lorsqu’un fournisseur modifie ses fichiers.
+
+## Assemblée nationale
+
+### AMO10 — Députés en exercice, mandats et organes
+
+- [Documentation complète
+  AMO10](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/AMO10.md)
+  : provenance, archives et XSD, structure JSON, import DuckDB,
+  contrôles et maintenance.
+- [Inventaire des champs JSON
+  AMO10](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/AMO10_champs.csv)
+  : chemins observés, types et fréquences.
+
+### Dossiers législatifs — dossiers et notices des documents
+
+- [Documentation complète des dossiers
+  législatifs](https://github.com/gilles13/parlementR/blob/main/inst/documentation/Dossiers_legislatifs.md)
+  : XSD, familles, relations, import DuckDB, contrôles et maintenance.
+- [Inventaire des champs JSON des dossiers
+  législatifs](https://github.com/gilles13/parlementR/blob/main/inst/documentation/Dossiers_legislatifs_champs.csv)
+  : chemins observés, types et fréquences.
+
+### Débats en séance publique — Syceron (XVIIe législature)
+
+- [Documentation technique
+  Syceron](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/Syceron.md)
+  : archive officielle, structure XML, tables DuckDB et contrôles.
+
+L’archive XML est conservée dans
+`tools::R_user_dir("parlementR", "cache")`. L’import et les recherches
+s’effectuent localement dans DuckDB :
+
+``` r
+
+cache = tools::R_user_dir("parlementR", "cache")
+archive = file.path(cache, "syseron.xml.zip")
+actualiser(db = db, jeux = "debats", archive = archive)
+# Ou contrôle de mise à jour depuis la source officielle :
+# actualiser(db = db, jeux = "debats")
+```
+
+### Amendements — XVIIe législature
+
+- [Documentation des
+  amendements](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/Amendements.md)
+  : provenance, import, structure et limites.
+
+Les liens pointent vers les documents de référence dans le dépôt GitHub
+; ils restent consultables indépendamment de la construction du site.
+
+## Version et provenance
+
+La version du package est inscrite dans `DESCRIPTION` et ses changements
+dans
+[`NEWS.md`](https://github.com/gilles13/parlementR/blob/main/NEWS.md).
+Elle est distincte des dates de publication, de téléchargement et
+d’importation des données. Le suivi des jeux est conservé dans
+`suivi.actualisations` ; il ne constitue pas encore un historique
+complet des archives successives.
+
+``` r
+
+packageVersion("parlementR")
+DBI::dbGetQuery(db, "SELECT * FROM suivi.actualisations")
+```
+
+## Sénat — sénateurs
+
+L’archive officielle
+`https://data.senat.fr/data/senateurs/export_sens.zip` contient le dump
+PostgreSQL `export_sens.sql`. `parlementR` lit directement les 95 blocs
+`COPY` et crée les tables correspondantes dans le schéma DuckDB
+`senateurs`, sans installation de PostgreSQL. Les types et les
+identifiants d’origine sont conservés ; l’import est transactionnel.
+
+``` r
+
+actualiser(jeux = "senateurs")
+# Import d'une archive locale, sans accès réseau :
+# importer_senateurs(archive = "/chemin/export_sens.zip")
+```
+
+L’actualisation utilise le contrôle HTTP conditionnel commun aux autres
+sources, avec journalisation des étapes et progression table par table.
+
+## Sénat — questions parlementaires
+
+Source officielle : [base Questions du
+Sénat](https://data.senat.fr/la-base-questions/) et [notice
+explicative](https://data.senat.fr/aide/notice-explicative-questions/).
+L’archive complète `questions.zip` contient `questions.sql`, une
+sauvegarde PostgreSQL avec huit tables. La base couvre les références
+des questions écrites et orales depuis le 2 avril 1978 ; la
+disponibilité des textes intégraux dépend de la période et de la nature
+des questions.
+
+[`importer_questions()`](https://gilles13.github.io/parlementR/reference/importer_questions.md)
+extrait les blocs `COPY` dans un répertoire temporaire, puis DuckDB les
+lit en bloc dans le schéma `sen_questions`, sans serveur PostgreSQL.
+L’import est transactionnel et vérifie les effectifs des huit tables.
+Les champs sont conservés en texte ; les questions (`tam_questions`) et
+réponses (`tam_reponses`) sont liées par
+`tam_reponses.idque = tam_questions.id`. Les tables de nomenclature sont
+également conservées.
+
+``` r
+
+# Archive locale, sans réseau :
+actualiser(jeux = "questions", archive = "~/Downloads/questions.zip")
+# Mise à jour depuis la source officielle :
+actualiser(jeux = "questions")
+# Recherches entièrement locales :
+rechercher_questions("logement")
+```
+
+La mise à jour utilise le cache et les contrôles HTTP conditionnels
+d’[`actualiser()`](https://gilles13.github.io/parlementR/reference/actualiser.md).
+Les recherches ne déclenchent aucun accès réseau. Une question sans
+réponse reste consultable. Les fonctions
+[`produire_questions()`](https://gilles13.github.io/parlementR/reference/produire_questions.md)
+et
+[`produire_question()`](https://gilles13.github.io/parlementR/reference/produire_question.md)
+génèrent respectivement un catalogue et une fiche PDF.
+
+**Contrôle d’importation effectué le 11 novembre 2026** sur l’archive
+transmise : 294 323 lignes dans `tam_questions` et 235 887 dans
+`tam_reponses`. Ces effectifs décrivent cette version de l’archive, pas
+une constante à imposer aux mises à jour.
+
+**Limite technique :** le décodeur de l’importateur prend en charge les
+échappements PostgreSQL courants ; les séquences octales et
+hexadécimales ne font pas encore l’objet d’un contrôle exhaustif de
+fidélité.
+
+### Classement thématique et exploration locale
+
+La table officielle `the` fournit **30 thèmes** (`thelib`). Les
+questions portent un champ multivalué `tam_questions.themes` : `#18#`
+désigne un thème, `#6#10#` plusieurs thèmes et `#` aucun thème attribué.
+Dans l’archive analysée, 164 537 questions portent seulement `#`
+(environ 55,9 %) : la classification n’est donc **pas exhaustive**. La
+table `tam_questions` possède aussi le champ `rubrique`, avec 1 875
+libellés distincts observés ; il ne constitue pas une hiérarchie
+garantie des 30 thèmes.
+
+Les données observées relient les valeurs de `themes` à `the.thenouidt`
+et non à `the.thecle` : par exemple, « Logement et urbanisme »
+correspond à `thenouidt = 18`, alors que `thecle = 16`. **Cette
+correspondance est empirique** : les commentaires officiels du dump
+désignent `thecle` comme « Code thème » et `thenouidt` comme « Critère
+de tri », sans expliciter la relation avec le champ multivalué `themes`.
+Le package conserve donc les codes sources et documente cette
+incertitude plutôt que de créer une nomenclature parallèle.
+
+``` r
+
+lister_themes(db = db)
+rechercher_questions(theme = "Logement et urbanisme", db = db)
+rechercher_questions("rénovation", theme = "Logement et urbanisme", db = db)
+produire_questions(theme = "Logement et urbanisme", limite = 30, db = db)
+```
+
+Le comptage par thème est **non exclusif** : une question classée dans
+deux thèmes contribue aux deux effectifs. La recherche reste entièrement
+locale.
+[`rechercher_questions()`](https://gilles13.github.io/parlementR/reference/rechercher_questions.md)
+conserve son filtre sur les questions écrites (`QE`).
+
+### Disponibilité historique des textes
+
+Sur l’archive étudiée le 11 novembre 2026, 46 277 questions sur 294 323
+(15,7 %) ont un champ `txtque` vide ou NULL, et 40 253 réponses sur 235
+887 (17,1 %) ont un champ `txtrep` vide ou NULL. Ces absences sont très
+concentrées sur les premières années : les textes des questions et
+réponses sont presque tous absents entre 1978 et 1985, puis la
+couverture s’améliore à partir de 1986 et devient quasi exhaustive à
+partir de 1997. Entre 2018 et 2025, aucun texte manquant n’a été relevé.
+En 2026, 34 questions et 34 réponses ont un champ textuel manquant dans
+cette archive. Ces effectifs peuvent changer lors d’une actualisation.
+
+Une **question sans texte** n’est pas nécessairement une **question sans
+réponse** : il s’agit de deux propriétés différentes. Les PDF indiquent
+« Texte non disponible dans la source officielle » pour les champs
+vides, sans masquer les métadonnées ni les éventuelles réponses
+multiples.
+
+La documentation de référence est constituée de la [notice officielle du
+Sénat](https://data.senat.fr/aide/notice-explicative-questions/) et des
+commentaires `COMMENT ON TABLE` et `COMMENT ON COLUMN` présents dans
+`questions.sql`. Ces commentaires décrivent les colonnes, mais ne
+spécifient pas toutes les relations métier.
+
+### Interface Shiny facultative
+
+`shiny_senat_question(db = db)` ouvre une interface locale de recherche
+des questions écrites du Sénat par thème officiel et mot-clé. Les
+résultats s’affichent par **5 lignes par défaut** (choix de 5, 10, 25 ou
+50). Un clic sur une ligne affiche la question et toutes ses réponses,
+avec un message explicite si un texte n’est pas disponible dans la
+source. La recherche ne démarre qu’après avoir cliqué sur « Rechercher
+».
+
+`shiny` et `DT` sont des packages **facultatifs** (`Suggests`), qui ne
+sont jamais installés automatiquement. Si l’un manque, la fonction
+explique comment l’installer et précise que seule cette interface est
+indisponible. Les autres fonctions de `parlementR` continuent de
+fonctionner. Aucune requête réseau n’est effectuée : l’application
+utilise la base DuckDB locale.
+
+``` r
+
+# Installation facultative, si l'interface est souhaitée
+install.packages(c("shiny", "DT"))
+shiny_senat_question(db = db)
+```

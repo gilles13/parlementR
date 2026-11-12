@@ -1,0 +1,189 @@
+# Comprendre la vie parlementaire française
+
+Comment une idée devient-elle une loi ? Pour répondre, il faut
+distinguer les institutions, les textes, les débats et les votes. Cette
+présentation donne quelques repères pour lire ensuite les données
+parlementaires avec `parlementR`.
+
+## 1. Qui fait quoi ?
+
+En France, le **Parlement** vote la loi, contrôle l’action du
+Gouvernement et évalue les politiques publiques. Il comprend deux
+assemblées :
+
+- **L’Assemblée nationale** : 577 députés, élus au suffrage universel
+  direct.
+- **Le Sénat** : 348 sénateurs, élus au suffrage universel indirect ; il
+  assure notamment la représentation des collectivités territoriales.
+
+Le **Gouvernement** conduit la politique de la Nation et dispose, comme
+les parlementaires, de l’initiative des lois. Le **président de la
+République** promulgue les lois adoptées. Le **Conseil constitutionnel**
+peut être saisi pour en contrôler la conformité à la Constitution.
+
+``` text
+                 INSTITUTIONS
+                       │
+       ┌───────────────┴───────────────┐
+       │                               │
+  Gouvernement                     Parlement
+  (pouvoir exécutif)             (pouvoir législatif)
+                                       │
+                         ┌─────────────┴─────────────┐
+                         │                           │
+                 Assemblée nationale               Sénat
+                     577 députés               348 sénateurs
+```
+
+Les institutions ne sont pas réductibles à ce schéma : il illustre
+uniquement les acteurs principaux du parcours d’une loi.
+
+## 2. Comment une loi est-elle élaborée ?
+
+Un **projet de loi** est présenté par le Gouvernement ; une
+**proposition de loi** est déposée par un ou plusieurs parlementaires.
+Le texte est généralement examiné en commission, puis débattu en séance
+publique. Les parlementaires peuvent proposer des amendements et voter
+sur le texte.
+
+``` text
+           Projet ou proposition de loi
+                       │
+                       ▼
+             Dépôt dans une assemblée
+                       │
+                       ▼
+            Examen en commission
+                       │
+                       ▼
+        Discussion et vote en séance
+                       │
+                       ▼
+           Transmission à l'autre
+                  assemblée
+                       │
+                       ▼
+          Examen, amendements, vote
+                       │
+                       ▼
+            Accord sur un même texte ?
+                 │             │
+                Oui           Non
+                 │             │
+                 │       Navette et éventuelle
+                 │       commission mixte paritaire
+                 │             │
+                 └───────┬─────┘
+                         ▼
+                Texte définitivement
+                      adopté
+                         │
+                         ▼
+             Promulgation et publication
+```
+
+**Ce parcours est simplifié.** Les procédures varient selon les textes.
+En cas de désaccord persistant, le Gouvernement peut, dans certaines
+conditions, demander à l’Assemblée nationale de statuer définitivement.
+Les lois constitutionnelles et certains autres textes obéissent à des
+règles particulières.
+
+## 3. À quoi sert un amendement ?
+
+Un **amendement** est une proposition de modification d’un texte en
+discussion : supprimer, ajouter ou modifier une disposition. Il peut
+être déposé par le Gouvernement ou par des parlementaires.
+
+``` text
+ Texte examiné
+      │
+      ▼
+ Amendement déposé
+      │
+      ▼
+ Examen et discussion
+      │
+      ▼
+ Adopté ? ─── Oui ──► Texte modifié
+      │
+     Non
+      │
+      ▼
+ Texte inchangé sur ce point
+```
+
+Un amendement peut aussi être retiré, déclaré irrecevable ou ne pas être
+examiné. Son **dépôt** ne signifie donc pas son **adoption**.
+
+## 4. Débat, vote et scrutin : trois notions distinctes
+
+- **Débat** : discussion d’un texte, d’un article, d’un amendement ou
+  d’un autre sujet en commission ou en séance.
+- **Vote** : décision prise sur une question soumise à l’assemblée.
+- **Scrutin public** : modalité de vote permettant de connaître les
+  résultats et, selon les données publiées, les positions individuelles
+  des parlementaires.
+
+Tous les débats ne donnent pas lieu à un scrutin public, et tous les
+votes ne sont pas documentés par un relevé nominatif. **L’absence d’un
+scrutin public ne prouve pas l’absence de vote.**
+
+## 5. Que font les parlementaires en dehors de la séance ?
+
+Une part importante du travail se déroule en **commission** : examen des
+textes, auditions, rapports et contrôle. Les parlementaires participent
+aussi à des missions d’information, délégations et autres organismes.
+Ils peuvent adresser des questions au Gouvernement et contribuer à
+l’évaluation des politiques publiques.
+
+Un parlementaire peut changer de groupe ou de commission au cours de son
+mandat. Pour étudier une carrière, il faut donc conserver les **dates de
+début et de fin** de chaque fonction ou appartenance.
+
+## 6. Comment lire les données parlementaires ?
+
+Les données ouvertes permettent d’observer différents objets, qui ne
+doivent pas être confondus :
+
+``` text
+ DOSSIER LÉGISLATIF
+       │
+       ├── Textes et versions successives
+       │      ├── Articles
+       │      └── Amendements et leur sort
+       │
+       ├── Étapes de la procédure
+       └── Débats et votes documentés
+
+ SÉANCE
+       └── Interventions d'orateurs
+
+ PARLEMENTAIRE
+       ├── Mandats
+       ├── Groupes et commissions
+       └── Activités documentées
+```
+
+Le **dossier législatif** suit la procédure d’un texte ; les données de
+**séance** décrivent les échanges ; les données de **scrutin**
+renseignent certains votes ; les données sur les **parlementaires**
+permettent d’étudier leurs mandats et leurs fonctions. Ces ensembles
+sont complémentaires, mais leur couverture historique et leurs
+identifiants peuvent différer.
+
+`parlementR` télécharge les sources officielles puis les conserve dans
+une base **DuckDB locale**. Les recherches et analyses peuvent ensuite
+être réalisées sans requêtes réseau à la demande. Pour connaître les
+jeux de données intégrés et leur structure, consulter la vignette
+[Documentation des
+sources](https://gilles13.github.io/parlementR/articles/documentation.md).
+
+## Pour aller plus loin
+
+- [Assemblée nationale — comprendre le fonctionnement de
+  l’Assemblée](https://www.assemblee-nationale.fr/)
+- [Sénat — rôle et fonctionnement](https://www.senat.fr/)
+- [Vie publique — institutions et élaboration de la
+  loi](https://www.vie-publique.fr/)
+- [Légifrance — textes et droit en
+  vigueur](https://www.legifrance.gouv.fr/)

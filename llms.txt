@@ -1,0 +1,203 @@
+# parlementR
+
+**Explorer les travaux parlementaires français à partir de données
+publiques officielles, conservées et interrogées localement.**
+
+`parlementR` est un package R de collecte, de documentation et d’analyse
+des données de l’Assemblée nationale et du Sénat. Les archives
+officielles sont téléchargées pour l’importation et les mises à jour ;
+les recherches et traitements sont réalisés dans une base **DuckDB
+locale**, sans requêtes d’analyse à distance.
+
+## Installer
+
+``` r
+
+remotes::install_github("gilles13/parlementR")
+```
+
+Le package est en développement (`0.0.2`). L’installation depuis GitHub
+nécessite le package `remotes`.
+
+## Démarrer
+
+``` r
+
+library(parlementR)
+
+db = connexion(creer = TRUE)
+actualiser(db = db, jeux = "deputes")
+fiche_deputes(db = db, fichier = "/tmp/parlementR-deputes.pdf")
+fermer_base()
+```
+
+[`connexion()`](https://gilles13.github.io/parlementR/reference/connexion.md)
+utilise par défaut
+`file.path(tools::R_user_dir("parlementR", "data"), "parlementR.duckdb")`.
+Il est possible de préciser `chemin = ...` pour réutiliser une base
+existante, notamment dans le cache. Les archives téléchargées sont
+conservées dans `tools::R_user_dir("parlementR", "cache")`.
+
+## Données disponibles
+
+| Institution | Jeu | Actualisation | Stockage principal |
+|----|----|----|----|
+| Assemblée nationale | Députés actifs (AMO10) | `actualiser(db, jeux = "deputes")` | `an_deputes` |
+| Assemblée nationale | Historique des acteurs | `actualiser(db, jeux = "historique")` | `an_historique` |
+| Assemblée nationale | Scrutins | `actualiser(db, jeux = "scrutins")` | `an_votes` |
+| Assemblée nationale | Dossiers législatifs | `actualiser(db, jeux = "dossiers")` | `an_dossiers` |
+| Assemblée nationale | Amendements | `actualiser(db, jeux = "amendements")` | `an_amendements` |
+| Assemblée nationale | Débats Syceron | `actualiser(db, jeux = "debats")` | `an_debats` |
+| Sénat | Sénateurs | `actualiser(db, jeux = "senateurs")` | `senateurs` |
+| Sénat | Questions | `actualiser(db, jeux = "questions")` | `sen_questions` |
+| Sénat | Dossiers DOSLEG / DOLE | `actualiser(db, jeux = "dosleg")` / `actualiser(db, jeux = "dole")` | `sen_dosleg` / `dila_dole` |
+
+L’import initial de certains jeux peut prendre plusieurs minutes. Pour
+les débats Syceron, une archive observée le 12 novembre 2026 contenait
+660 fichiers XML (environ 59 Mo). Les effectifs changent au fil des
+publications.
+
+## Exemples d’analyse
+
+``` r
+
+# Après importation des jeux correspondants :
+actualiser(db = db, jeux = "amendements")
+rapport_legislatif(db, "logement", pdf = FALSE)
+
+# Exploitation des débats déjà importés :
+DBI::dbGetQuery(db, "SELECT count(*) AS seances FROM an_debats.debats_seances")
+```
+
+Les recherches parlementaires sont exécutées sur la base locale. Les
+liens entre scrutins et amendements ne sont pas encore reconstruits
+automatiquement à partir des débats.
+
+## Documentation et reproductibilité
+
+- [Guide : comprendre la vie
+  parlementaire](https://gilles13.github.io/parlementR/vignettes/comprendre-vie-parlementaire.Rmd)
+- [Documentation des sources et des
+  imports](https://gilles13.github.io/parlementR/vignettes/documentation.Rmd)
+- [À propos du
+  projet](https://gilles13.github.io/parlementR/vignettes/apropos.Rmd)
+- [Historique des
+  versions](https://gilles13.github.io/parlementR/NEWS.md)
+- [Fiche
+  AMO10](https://gilles13.github.io/parlementR/inst/documentation/sources/AMO10.md)
+  et [inventaire
+  JSON](https://gilles13.github.io/parlementR/inst/documentation/sources/AMO10_champs.csv)
+- [Fiche
+  Syceron](https://gilles13.github.io/parlementR/inst/documentation/sources/Syceron.md)
+- [Fiche
+  Amendements](https://gilles13.github.io/parlementR/inst/documentation/sources/Amendements.md)
+- [Fiche Dossiers
+  législatifs](https://gilles13.github.io/parlementR/inst/documentation/Dossiers_legislatifs.md)
+
+La table `suivi.actualisations` conserve les dates de dernière
+importation et de contrôle, ainsi que les métadonnées HTTP disponibles.
+Ce suivi n’est pas un archivage exhaustif de toutes les versions des
+données.
+
+## Extension DuckDB ICU
+
+Certaines dates avec fuseau horaire nécessitent l’extension DuckDB
+`icu`. Son installation est une opération ponctuelle, à répéter
+éventuellement après une mise à jour de DuckDB :
+
+``` r
+
+db = DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+DBI::dbExecute(db, "INSTALL icu")
+DBI::dbDisconnect(db, shutdown = TRUE)
+```
+
+[`connexion()`](https://gilles13.github.io/parlementR/reference/connexion.md)
+charge ensuite l’extension installée avec `LOAD icu`, sans
+téléchargement.
+
+Site du projet : <https://gilles13.github.io/parlementR/>
+
+# Package index
+
+## Donnees et connexions
+
+- [`connexion()`](https://gilles13.github.io/parlementR/reference/connexion.md)
+  : Ouvrir ou reutiliser la connexion DuckDB
+- [`fermer_base()`](https://gilles13.github.io/parlementR/reference/fermer_base.md)
+  : Fermer la connexion geree par parlementR
+- [`actualiser()`](https://gilles13.github.io/parlementR/reference/actualiser.md)
+  : Actualiser les donnees parlementaires
+
+## Analyses et rapports
+
+- [`fiche_deputes()`](https://gilles13.github.io/parlementR/reference/fiche_deputes.md)
+  : Fiche PDF des deputes par groupe parlementaire
+- [`fiche_depute()`](https://gilles13.github.io/parlementR/reference/fiche_depute.md)
+  : Fiche exhaustive d'un depute dans les donnees locales
+- [`produire_fiche_depute()`](https://gilles13.github.io/parlementR/reference/produire_fiche_depute.md)
+  : Produire la fiche PDF synthetique d'un depute
+- [`produire_cheatsheet()`](https://gilles13.github.io/parlementR/reference/produire_cheatsheet.md)
+  : Produire la cheatsheet PDF de parlementR
+- [`rapport_legislatif()`](https://gilles13.github.io/parlementR/reference/rapport_legislatif.md)
+  : Rapport legislatif thematique, construit exclusivement depuis DuckDB
+
+## Sénateurs
+
+- [`importer_senateurs()`](https://gilles13.github.io/parlementR/reference/importer_senateurs.md)
+  : Importer les senateurs depuis une archive officielle locale
+- [`senateurs_synthese()`](https://gilles13.github.io/parlementR/reference/senateurs_synthese.md)
+  : Produire les syntheses statistiques des senateurs en PDF
+- [`produire_senateurs()`](https://gilles13.github.io/parlementR/reference/produire_senateurs.md)
+  : Produire un annuaire PDF des senateurs
+- [`fiche_senateur()`](https://gilles13.github.io/parlementR/reference/fiche_senateur.md)
+  : Fiche historique d'un senateur
+- [`produire_fiche_senateur()`](https://gilles13.github.io/parlementR/reference/produire_fiche_senateur.md)
+  : Produire une fiche biographique lisible pour un senateur
+
+## Importation des données législatives
+
+- [`importer_dole()`](https://gilles13.github.io/parlementR/reference/importer_dole.md)
+  : Importer le corpus complet DOLE de la DILA
+- [`importer_dosleg()`](https://gilles13.github.io/parlementR/reference/importer_dosleg.md)
+  : Importer DOSLEG depuis une archive officielle locale
+
+## Recherche et documentation des dossiers
+
+- [`rechercher_dossiers()`](https://gilles13.github.io/parlementR/reference/rechercher_dossiers.md)
+  : Rechercher des dossiers parlementaires dans la base locale
+- [`produire_sujets()`](https://gilles13.github.io/parlementR/reference/produire_sujets.md)
+  : Produire un catalogue PDF de dossiers correspondant a un sujet
+- [`produire_dossier()`](https://gilles13.github.io/parlementR/reference/produire_dossier.md)
+  : Produire la fiche PDF d'un dossier legislatif de l'Assemblee
+  nationale
+
+## Questions du Sénat
+
+- [`importer_questions()`](https://gilles13.github.io/parlementR/reference/importer_questions.md)
+  : Importer les questions du Senat depuis une archive officielle locale
+- [`lister_themes()`](https://gilles13.github.io/parlementR/reference/lister_themes.md)
+  : Lister les themes officiels des questions du Senat
+- [`rechercher_questions()`](https://gilles13.github.io/parlementR/reference/rechercher_questions.md)
+  : Rechercher les questions du Senat dans DuckDB local
+- [`consulter_question()`](https://gilles13.github.io/parlementR/reference/consulter_question.md)
+  : Consulter une question et ses reponses
+- [`produire_questions()`](https://gilles13.github.io/parlementR/reference/produire_questions.md)
+  : Produire un catalogue PDF des questions du Senat
+- [`produire_question()`](https://gilles13.github.io/parlementR/reference/produire_question.md)
+  : Produire une fiche PDF de question et reponses
+- [`shiny_senat_question()`](https://gilles13.github.io/parlementR/reference/shiny_senat_question.md)
+  : Interface locale des questions du Sénat
+
+# Articles
+
+### Guide
+
+- [À propos de
+  parlementR](https://gilles13.github.io/parlementR/articles/apropos.md):
+- [Comprendre la vie parlementaire
+  française](https://gilles13.github.io/parlementR/articles/comprendre-vie-parlementaire.md):
+- [Documentation des
+  sources](https://gilles13.github.io/parlementR/articles/documentation.md):
+- [La DILA : rendre le droit et l'information publique
+  accessibles](https://gilles13.github.io/parlementR/articles/dila.md):

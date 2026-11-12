@@ -1,0 +1,42 @@
+# À propos de parlementR
+
+`parlementR` vise à faciliter l’étude des travaux parlementaires
+français à partir des données ouvertes officielles. Il conserve les
+documents sources complets dans DuckDB, puis permet de construire des
+analyses reproductibles et des documents PDF exploitant les informations
+importées.
+
+La démarche est progressive : une source à la fois, avec un importateur
+contrôlé et une documentation détaillée permettant de comprendre les
+traitements et de les maintenir si les formats évoluent.
+
+## Sources de données ouvertes
+
+- [Assemblée nationale — données
+  ouvertes](https://data.assemblee-nationale.fr/)
+- [Sénat — données ouvertes](https://data.senat.fr/)
+- [Légifrance — données ouvertes et
+  API](https://www.legifrance.gouv.fr/contenu/menu/partenaires/open-data-et-api)
+- [data.gouv.fr — catalogue national](https://www.data.gouv.fr/)
+
+Plusieurs jeux de l’Assemblée nationale et du Sénat sont désormais pris
+en charge, notamment AMO10, les dossiers législatifs, les amendements,
+les scrutins, les débats Syceron, les sénateurs et les questions du
+Sénat. La présence d’un lien vers une source ne signifie pas
+nécessairement que toutes ses données sont intégrées.
+
+## Principes de travail
+
+- **Stockage local** : les archives sont téléchargées et importées dans
+  DuckDB ; les recherches et analyses n’interrogent pas de service
+  distant.
+- **Traçabilité** : les documents officiels sont conservés et le suivi
+  des imports est enregistré dans `suivi.actualisations`.
+- **Reproductibilité** : les traitements sont documentés et le code du
+  package est versionné ; la version du logiciel ne se confond pas avec
+  la date des données.
+
+Consulter la [documentation des
+sources](https://gilles13.github.io/parlementR/articles/documentation.md)
+et l’[historique des
+versions](https://github.com/gilles13/parlementR/blob/main/NEWS.md).

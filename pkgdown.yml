@@ -1,0 +1,12 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  apropos: apropos.html
+  comprendre-vie-parlementaire: comprendre-vie-parlementaire.html
+  dila: dila.html
+  documentation: documentation.html
+last_built: 2026-11-12T14:41Z
+urls:
+  reference: https://gilles13.github.io/parlementR/reference
+  article: https://gilles13.github.io/parlementR/articles

@@ -1,19 +1,44 @@
 ---
-title: "Rapport législatif"
+title: ""
 output:
   pdf_document:
     latex_engine: xelatex
-geometry: margin=1.8cm
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
 fontsize: 10pt
 header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
   - \usepackage{longtable}
   - \usepackage{booktabs}
 params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
   sujet: ""
   dossiers: !r data.frame()
   documents: !r data.frame()
   amendements: !r data.frame()
 ---
+
+```{r entete-commune, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+if (nzchar(params$logo)) {
+  cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+      params$logo, "}}}}\n", sep = "")
+} else {
+  cat("\\gdef\\senateurslogo{}\n")
+}
+cat("\\pagestyle{senateurs}\n")
+
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
@@ -50,10 +75,12 @@ for (i in seq_len(nrow(params$dossiers))) {
   if (nrow(docs)) {
     t = data.frame(Document = docs$document_uid,
                    Titre = ifelse(is.na(docs$titre), "", docs$titre))
-    cat(knitr::kable(t, format = "latex", booktabs = TRUE,
-                     longtable = TRUE, linesep = ""), "
-
-")
+    latex = knitr::kable(t, format = "latex", booktabs = TRUE,
+                         longtable = TRUE, linesep = "")
+    lignes = strsplit(latex, "\n", fixed = TRUE)[[1]]
+    debut = startsWith(trimws(lignes), "\\begin{longtable}")
+    lignes[debut] = sub("\\{[lcr]+\\}$", "{p{4.2cm}p{10.7cm}}", lignes[debut])
+    cat(parlementR:::.zebrer_tableau_pdf(paste(lignes, collapse = "\n")), "\n\n")
   }
 }
 ```
@@ -68,7 +95,11 @@ if (!nrow(a)) {
 } else {
   t = data.frame(UID = a$uid, Numéro = a$numero,
                  Sort = a$sort, Texte = a$texte_ref)
-  cat(knitr::kable(t, format = "latex", booktabs = TRUE,
-                   longtable = TRUE, linesep = ""))
+  latex = knitr::kable(t, format = "latex", booktabs = TRUE,
+                       longtable = TRUE, linesep = "")
+  lignes = strsplit(latex, "\n", fixed = TRUE)[[1]]
+  debut = startsWith(trimws(lignes), "\\begin{longtable}")
+  lignes[debut] = sub("\\{[lcr]+\\}$", "{p{6cm}p{1.5cm}p{3cm}p{4.3cm}}", lignes[debut])
+  cat(parlementR:::.zebrer_tableau_pdf(paste(lignes, collapse = "\n")))
 }
 ```

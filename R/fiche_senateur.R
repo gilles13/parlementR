@@ -54,6 +54,7 @@ fiche_senateur = function(nom, db = NULL) {
     identite = lire("SELECT senmat, sennomuse, senprenomuse, sendatnai, sendatdec, etasencod, sendespro, sencircou FROM senateurs.sen WHERE senmat = ?"),
     mandats = lire("SELECT eludatdeb AS debut, eludatfin AS fin, eludatelu AS election, dptnum AS departement, typmancod AS type_mandat, etadebmancod AS debut_motif, etafinmancod AS fin_motif FROM senateurs.elusen WHERE senmat = ? ORDER BY eludatdeb"),
     groupes_politiques = lire("SELECT m.memgrppoldatdeb AS debut, m.memgrppoldatfin AS fin, m.grppolcod AS code, g.grppolliccou AS sigle, g.grppollibcou AS libelle, m.typapppolcod AS type_appartenance FROM senateurs.memgrppol m LEFT JOIN senateurs.grppol g ON m.grppolcod = g.grppolcod WHERE m.senmat = ? ORDER BY m.memgrppoldatdeb NULLS FIRST"),
+    fonctions_groupes = lire("SELECT m.grppolcod AS code_groupe, g.grppollibcou AS groupe, fm.fongrppolcod AS code_fonction, f.fongrppollib AS fonction, fm.fonmemgrppoldatdeb AS debut, fm.fonmemgrppoldatfin AS fin FROM senateurs.fonmemgrppol fm JOIN senateurs.memgrppol m ON fm.memgrppolid = m.memgrppolid LEFT JOIN senateurs.grppol g ON m.grppolcod = g.grppolcod LEFT JOIN senateurs.fongrppol f ON fm.fongrppolcod = f.fongrppolcod WHERE m.senmat = ? AND fm.fongrppolcod <> 'MEMBREPOL' ORDER BY fm.fonmemgrppoldatdeb DESC NULLS LAST"),
     organismes = lire("SELECT m.memgrpsendatent AS debut, m.memgrpsendatsor AS fin, m.orgcod AS code, g.typorgcod AS type_organisme FROM senateurs.memgrpsen m LEFT JOIN senateurs.grpsenami g ON m.orgcod = g.orgcod WHERE m.senmat = ? ORDER BY m.memgrpsendatent NULLS FIRST"),
     commissions = lire("SELECT memcomdatdeb AS debut, memcomdatfin AS fin, orgcod AS code, memcomtitsup AS statut FROM senateurs.memcom WHERE senmat = ? ORDER BY memcomdatdeb NULLS FIRST"),
     delegations = lire("SELECT memdelegadatdeb AS debut, memdelegadatfin AS fin, orgcod AS code, designcod AS designation FROM senateurs.memdelega WHERE senmat = ? ORDER BY memdelegadatdeb NULLS FIRST"),
@@ -163,6 +164,14 @@ produire_fiche_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
                     R = 'rattach\u00e9', paste0('code ', x$type_appartenance))) else '')
   }, character(1)) else character()
 
+  fg = fiche$fonctions_groupes
+  fonctions_groupes = if (nrow(fg)) vapply(seq_len(nrow(fg)), function(i) {
+    x = fg[i, ]
+    paste0(valeur(x$fonction, valeur(x$code_fonction)),
+           ' du groupe ', valeur(x$code_groupe),
+           ' \u2014 ', periode(x$debut, x$fin))
+  }, character(1)) else character()
+
   c = fiche$commissions
   commissions = if (nrow(c)) vapply(seq_len(nrow(c)), function(i) {
     x = c[i, ]
@@ -195,7 +204,7 @@ produire_fiche_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
            if (!is.na(x$fonction)) paste0(' \u2014 ', x$fonction) else '')
   }, character(1)) else character()
 
-  # Les appartenances aux organismes sénatoriaux sont nombreuses et parfois
+  # Les appartenances aux organismes senatoriaux sont nombreuses et parfois
   # reduites a des evenements d'une journee : les presenter en annexe.
   o = fiche$organismes
   organismes = if (nrow(o)) vapply(seq_len(nrow(o)), function(i) {
@@ -211,6 +220,7 @@ produire_fiche_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
     section('Appartenances politiques', paste0(
       liste(groupes),
       '\\emph{Les codes de groupe sont ceux de la base historique ; les d\u00e9nominations actuelles ne sont pas substitu\u00e9es aux noms anciens.}\\par\n')),
+    section('Fonctions dans les groupes politiques', liste(fonctions_groupes)),
     section('Commissions', liste(commissions)),
     section('D\u00e9l\u00e9gations', liste(delegations)),
     section('Autres mandats d\u00e9clar\u00e9s', liste(mandats_locaux)),

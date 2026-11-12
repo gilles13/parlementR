@@ -14,14 +14,19 @@
   x
 }
 
+.logo_pdf_parlementR = function() {
+  logo = system.file("assets", "logo_hexa.png", package = "parlementR")
+  if (!nzchar(logo)) logo = file.path("inst", "assets", "logo_hexa.png")
+  if (!file.exists(logo)) stop("Logo hexagonal introuvable.", call. = FALSE)
+  normalizePath(logo, winslash = "/", mustWork = TRUE)
+}
+
 .pdf_senateurs = function(titre, sous_titre, contenu, sortie, modele = NULL) {
   if (!requireNamespace("rmarkdown", quietly = TRUE))
     stop("Le package 'rmarkdown' est necessaire.")
   if (is.null(modele)) modele = system.file("modeles", "senateurs.Rmd", package = "parlementR")
   if (!nzchar(modele) || !file.exists(modele)) stop("Modele PDF senateurs introuvable.")
-  logo = system.file("assets", "logo_hexa.png", package = "parlementR")
-  if (!nzchar(logo)) logo = file.path("inst", "assets", "logo_hexa.png")
-  if (!file.exists(logo)) stop("Logo hexagonal introuvable.", call. = FALSE)
+  logo = .logo_pdf_parlementR()
   dir.create(dirname(sortie), recursive = TRUE, showWarnings = FALSE)
   cible = normalizePath(dirname(sortie), mustWork = TRUE)
   resultat = rmarkdown::render(input = modele, output_file = basename(sortie),

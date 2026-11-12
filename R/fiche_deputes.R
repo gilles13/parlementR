@@ -40,6 +40,7 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
              json_extract_string(mandat, '$.typeOrgane') AS type_organe,
              json_extract_string(mandat, '$.organes.organeRef') AS organe_uid,
              json_extract_string(mandat, '$.infosQualite.libQualite') AS qualite,
+             json_extract_string(mandat, '$.infosQualite.codeQualite') AS code_qualite,
              json_extract_string(mandat, '$.dateDebut') AS date_debut,
              json_extract_string(mandat, '$.election.lieu.departement') AS departement,
              json_extract_string(mandat, '$.election.lieu.numCirco') AS circo
@@ -49,7 +50,7 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
     SELECT a.uid,
            json_extract_string(a.contenu, '$.acteur.etatCivil.ident.prenom') AS prenom,
            json_extract_string(a.contenu, '$.acteur.etatCivil.ident.nom') AS nom,
-           m.type_organe, m.qualite, m.date_debut, m.departement, m.circo,
+           m.type_organe, m.qualite, m.code_qualite, m.date_debut, m.departement, m.circo,
            o.uid AS organe_uid,
            json_extract_string(o.contenu, '$.organe.libelle') AS organe,
            json_extract_string(o.contenu, '$.organe.libelleAbrege') AS sigle
@@ -66,13 +67,14 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
   # La circonscription provient du mandat parlementaire, non des organes.
   deputes = x[x$type_organe == "ASSEMBLEE", c("uid", "prenom", "nom", "departement", "circo")]
   if (anyDuplicated(deputes$uid)) stop("Plusieurs mandats parlementaires actifs par depute.")
-  groupes = x[x$type_organe == "GP", c("uid", "organe", "sigle", "date_debut")]
+  groupes = x[x$type_organe == "GP", c("uid", "organe", "sigle", "date_debut", "code_qualite")]
   groupes = groupes[order(groupes$uid, groupes$date_debut, decreasing = TRUE), ]
   groupes = groupes[!duplicated(groupes$uid), ]
   i = match(deputes$uid, groupes$uid)
   deputes$groupe = groupes$organe[i]
   deputes$sigle = groupes$sigle[i]
-  deputes$groupe[is.na(deputes$groupe)] = "Non renseigne"
+  deputes$president = !is.na(groupes$code_qualite[i]) & groupes$code_qualite[i] == "Pr\u00e9sident"
+  deputes$groupe[is.na(deputes$groupe)] = "Non renseign\u00e9"
   deputes$sigle[is.na(deputes$sigle)] = "?"
   if (!is.null(groupe)) {
     deputes = deputes[toupper(deputes$sigle) == toupper(trimws(groupe)), , drop = FALSE]
@@ -99,16 +101,17 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
   deputes$circonscription = ifelse(is.na(deputes$departement), "",
     paste0(deputes$departement, ifelse(is.na(deputes$circo), "",
       paste0(" (", deputes$circo, ")"))))
-  deputes = deputes[order(deputes$groupe, deputes$nom, deputes$prenom), , drop = FALSE]
+  deputes = deputes[order(deputes$groupe, !deputes$president, deputes$nom, deputes$prenom), , drop = FALSE]
   etiquettes = paste0(deputes$groupe, " (", deputes$sigle, ")")
   tableaux = lapply(split(seq_len(nrow(deputes)), factor(etiquettes, levels = unique(etiquettes))),
                     function(i) {
     tab = tibble::tibble(
-      "Depute" = paste(deputes$prenom[i], deputes$nom[i]),
+      "D\u00e9put\u00e9" = paste0(ifelse(deputes$president[i], "PRESIDENTPARLEMENTR", ""),
+                             deputes$prenom[i], " ", deputes$nom[i]),
       "Circonscription" = deputes$circonscription[i],
       .name_repair = "minimal"
     )
-    if (enrichie) tab[["Fonctions particulieres"]] = deputes$fonction[i]
+    if (enrichie) tab[["Fonctions particuli\u00e8res"]] = deputes$fonction[i]
     tab
   })
   synthese = tibble::tibble(
@@ -121,11 +124,43 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
   if (!nzchar(modele)) stop("Modele PDF introuvable dans le package.")
   dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
   cible = normalizePath(dirname(fichier), mustWork = TRUE)
+  # Provenance du jeu AMO10 utilise par cette fiche.
+  source = .source_archive("deputes", tools::R_user_dir("parlementR", "cache"))
+  suivi = tryCatch(.db_get_tibble(db, paste0(
+    "SELECT date_import, date_controle, modification FROM suivi.actualisations ",
+    "WHERE jeu = 'deputes'")), error = function(e) NULL)
+  valeur_date = function(x) {
+    if (length(x) == 0L || is.na(x[1])) return("Non disponible")
+    format(as.POSIXct(x[1]), "%d/%m/%Y %H:%M:%S")
+  }
+  date_import = if (!is.null(suivi) && nrow(suivi))
+    valeur_date(suivi$date_import) else "Non disponible"
+  date_controle = if (!is.null(suivi) && nrow(suivi))
+    valeur_date(suivi$date_controle) else "Non disponible"
+  date_source = if (!is.null(suivi) && nrow(suivi) &&
+                     !is.na(suivi$modification[1]) &&
+                     nzchar(suivi$modification[1]))
+    suivi$modification[1] else "Non disponible"
+  metadonnees = c(
+    "Producteur" = "Assembl\u00e9e nationale (donn\u00e9es ouvertes)",
+    "Jeu" = "AMO10 - d\u00e9put\u00e9s actifs, mandats actifs et organes",
+    "Archive ZIP" = basename(source$chemin),
+    "Source" = "Archive officielle (lien cliquable)",
+    "Derni\u00e8re modification HTTP" = date_source,
+    "Dernier import DuckDB" = date_import,
+    "Dernier contr\u00f4le" = date_controle,
+    "Traitement" = "parlementR - mandats actifs et groupes parlementaires"
+  )
+  metadonnees = vapply(metadonnees, .echapper_latex_senateurs, character(1))
   sortie = rmarkdown::render(
     input = modele,
     output_file = basename(fichier),
     output_dir = cible,
-    params = list(tableaux = tableaux, synthese = synthese, total = nrow(deputes)),
+    params = list(tableaux = tableaux, synthese = synthese, total = nrow(deputes),
+      metadonnees = metadonnees, source_url = source$url,
+      titre = .echapper_latex_senateurs("Assembl\u00e9e nationale - D\u00e9put\u00e9s"),
+      sous_titre = .echapper_latex_senateurs(paste0(nrow(deputes), " d\u00e9put\u00e9s - \u00c9dition du ", format(Sys.Date(), "%d/%m/%Y"))),
+      logo = .logo_pdf_parlementR()),
     envir = new.env(parent = globalenv()),
     quiet = TRUE
   )

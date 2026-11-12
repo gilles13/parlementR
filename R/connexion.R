@@ -37,6 +37,17 @@ connexion = function(chemin = NULL, creer = FALSE) {
       stop("Impossible de creer le repertoire de la base : ", dirname(chemin))
   }
   db = DBI::dbConnect(duckdb::duckdb(), dbdir = chemin)
+  tryCatch(
+    DBI::dbExecute(db, "LOAD icu"),
+    error = function(e) {
+      DBI::dbDisconnect(db, shutdown = TRUE)
+      stop("Extension DuckDB 'icu' indisponible pour cette version de DuckDB.\n",
+           "Installer une fois l'extension avec une connexion DuckDB :\n",
+           "  DBI::dbExecute(db, 'INSTALL icu')\n",
+           "Puis relancer connexion().\n",
+           "Detail : ", conditionMessage(e), call. = FALSE)
+    }
+  )
   .connexions$db = db
   .connexions$chemin = chemin
   db

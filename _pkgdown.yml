@@ -34,6 +34,9 @@ reference:
 - title: Analyses et rapports
   contents:
   - fiche_deputes
+  - fiche_depute
+  - produire_fiche_depute
+  - produire_cheatsheet
   - rapport_legislatif
 
 - title: Sénateurs

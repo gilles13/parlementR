@@ -21,11 +21,36 @@ Cette page centralise la documentation technique de chaque source intégrée à 
 - [Documentation complète des dossiers législatifs](https://github.com/gilles13/parlementR/blob/main/inst/documentation/Dossiers_legislatifs.md) : XSD, familles, relations, import DuckDB, contrôles et maintenance.
 - [Inventaire des champs JSON des dossiers législatifs](https://github.com/gilles13/parlementR/blob/main/inst/documentation/Dossiers_legislatifs_champs.csv) : chemins observés, types et fréquences.
 
-### Amendements — XVIIe legislature
+### Débats en séance publique — Syceron (XVIIe législature)
+
+- [Documentation technique Syceron](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/Syceron.md) : archive officielle, structure XML, tables DuckDB et contrôles.
+
+L'archive XML est conservée dans `tools::R_user_dir("parlementR", "cache")`.
+L'import et les recherches s'effectuent localement dans DuckDB :
+
+```r
+cache = tools::R_user_dir("parlementR", "cache")
+archive = file.path(cache, "syseron.xml.zip")
+actualiser(db = db, jeux = "debats", archive = archive)
+# Ou contrôle de mise à jour depuis la source officielle :
+# actualiser(db = db, jeux = "debats")
+```
+
+### Amendements — XVIIe législature
 
 - [Documentation des amendements](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/Amendements.md) : provenance, import, structure et limites.
 
-Les liens pointent vers les documents de référence dans le dépôt GitHub ; ils restent consultables indépendamment de la construction du site. Les prochaines sources seront ajoutées ici à mesure de leur intégration.
+Les liens pointent vers les documents de référence dans le dépôt GitHub ; ils restent consultables indépendamment de la construction du site.
+
+## Version et provenance
+
+La version du package est inscrite dans `DESCRIPTION` et ses changements dans [`NEWS.md`](https://github.com/gilles13/parlementR/blob/main/NEWS.md). Elle est distincte des dates de publication, de téléchargement et d’importation des données. Le suivi des jeux est conservé dans `suivi.actualisations` ; il ne constitue pas encore un historique complet des archives successives.
+
+```r
+packageVersion("parlementR")
+DBI::dbGetQuery(db, "SELECT * FROM suivi.actualisations")
+```
+
 
 
 ## Sénat — sénateurs

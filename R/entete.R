@@ -21,7 +21,7 @@
       # Dimensions physiques : le ratio de l'image est conserve sur une page A4.
       largeur = grid::unit(.76, "in")
       hauteur = grid::unit(.76 * dim(image)[1L] / dim(image)[2L], "in")
-      grid::grid.raster(image, x = .875, y = .927,
+      grid::grid.raster(image, x = .875, y = .916,
                         width = largeur, height = hauteur, interpolate = TRUE)
     }
   }

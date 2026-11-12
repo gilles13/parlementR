@@ -22,7 +22,6 @@ produire_senateurs = function(
   sql = paste0(
     "SELECT senmat AS id, sennomuse AS nom, senprenomuse AS prenom, ",
     "sengrppolcodcou AS code_groupe, sengrppolliccou AS groupe, ",
-    "sentypappcou AS rattachement, ",
     "sendespro AS profession, sencircou AS circonscription, ",
     "sencomliccou AS commission, etasencod AS statut ",
     "FROM senateurs.sen",
@@ -30,14 +29,47 @@ produire_senateurs = function(
     " ORDER BY sengrppolliccou NULLS LAST, sennomuse, senprenomuse, senmat")
   donnees = if (type == "tous") .db_get_tibble(con, sql) else
     .db_get_tibble(con, sql, params = list(unname(statuts[[type]])))
-  date_extraction = format(Sys.time(), "%d/%m/%Y a %H:%M")
+  # Fonctions particulieres exercees dans le groupe politique actuel.
+  # On ne retient que les fonctions en cours et l'appartenance en cours.
+  if (type == "actif" && nrow(donnees)) {
+    fonctions = .db_get_tibble(con, paste0(
+      "SELECT m.senmat AS id, m.grppolcod AS code_groupe, ",
+      "string_agg(DISTINCT f.fongrppollib, ', ' ORDER BY f.fongrppollib) AS fonction ",
+      "FROM senateurs.fonmemgrppol fm ",
+      "JOIN senateurs.memgrppol m ON fm.memgrppolid = m.memgrppolid ",
+      "JOIN senateurs.fongrppol f ON fm.fongrppolcod = f.fongrppolcod ",
+      "WHERE fm.fongrppolcod <> 'MEMBREPOL' ",
+      "AND fm.fonmemgrppoldatdeb <= CURRENT_DATE ",
+      "AND (fm.fonmemgrppoldatfin IS NULL OR fm.fonmemgrppoldatfin >= CURRENT_DATE) ",
+      "AND m.memgrppoldatdeb <= CURRENT_DATE ",
+      "AND (m.memgrppoldatfin IS NULL OR m.memgrppoldatfin >= CURRENT_DATE) ",
+      "GROUP BY m.senmat, m.grppolcod"))
+    # Le code de groupe, et non son libelle, assure la correspondance.
+    cle = paste(donnees$id, donnees$code_groupe)
+    donnees$fonction = fonctions$fonction[match(
+      cle, paste(fonctions$id, fonctions$code_groupe))]
+    presidents = .db_get_tibble(con, paste0(
+      "SELECT DISTINCT m.senmat AS id, m.grppolcod AS code_groupe ",
+      "FROM senateurs.fonmemgrppol fm ",
+      "JOIN senateurs.memgrppol m ON fm.memgrppolid = m.memgrppolid ",
+      "WHERE fm.fongrppolcod = 'PDTPOL' ",
+      "AND fm.fonmemgrppoldatdeb <= CURRENT_DATE ",
+      "AND (fm.fonmemgrppoldatfin IS NULL OR fm.fonmemgrppoldatfin >= CURRENT_DATE) ",
+      "AND m.memgrppoldatdeb <= CURRENT_DATE ",
+      "AND (m.memgrppoldatfin IS NULL OR m.memgrppoldatfin >= CURRENT_DATE)"))
+    donnees$president = cle %in% paste(presidents$id, presidents$code_groupe)
+  } else {
+    donnees$fonction = NA_character_
+    donnees$president = FALSE
+  }
+  date_extraction = format(Sys.time(), "%d/%m/%Y \u00e0 %H:%M")
   esc = function(x) {
     x = as.character(x)
     x[is.na(x)] = ""
     .echapper_latex_senateurs(x)
   }
-  titres = c(actif = "Senateurs en exercice", anciens = "Anciens senateurs",
-             autres = "Autres personnes", tous = "Tous les senateurs")
+  titres = c(actif = "S\u00e9nateurs en exercice", anciens = "Anciens s\u00e9nateurs",
+             autres = "Autres personnes", tous = "Tous les s\u00e9nateurs")
   # D\u00E9nominations d\u00E9velopp\u00E9es pour les groupes actuels ; les groupes historiques
   # conservent leur libell\u00E9 source lorsqu'aucune correspondance n'est \u00E9tablie.
   noms_groupes = c(
@@ -57,7 +89,7 @@ produire_senateurs = function(
   donnees$groupe = ifelse(!is.na(nom), paste0(nom, " (", code, ")"), code)
   # A4 portrait : colonnes limitees aux informations lisibles sur cette largeur.
   groupes = ifelse(is.na(donnees$groupe) | !nzchar(donnees$groupe),
-                   "Sans groupe renseigne", donnees$groupe)
+                   "Sans groupe renseign\u00e9", donnees$groupe)
   if (!nrow(donnees)) stop("Aucun senateur dans la selection.")
   # Le recapitulatif et l'annuaire reposent sur exactement la meme selection.
   effectifs = sort(table(groupes), decreasing = TRUE)
@@ -67,26 +99,38 @@ produire_senateurs = function(
     "\\% \\\\"
   )
   recap = paste0(
-    "\\section*{Repartition par groupe ou formation}\n",
+    "\\section*{R\u00e9partition par groupe ou formation}\n",
     "\\begin{longtable}{p{10cm}rr}\n\\toprule\n",
     "Groupe ou formation & Effectif & Part \\\\ \\midrule\n",
-    paste(recap_lignes, collapse = "\n"), "\n\\midrule\n",
+    paste(ifelse(seq_along(recap_lignes) %% 2L == 0L,
+                 paste0("\\rowcolor{gray!12} ", recap_lignes), recap_lignes), collapse = "\n"), "\n\\midrule\n",
     "\\textbf{Total} & \\textbf{", nrow(donnees),
     "} & \\textbf{100\\%} \\\\ \\bottomrule\n",
     "\\end{longtable}\n"
   )
   donnees$senateur = trimws(paste(donnees$nom, donnees$prenom))
-  colonnes = c("id", "senateur", "rattachement", "profession", "circonscription")
-  libelles = c("ID", "Nom et pr\u00E9nom", "Ratt.", "Profession", "Circonscription")
+  colonnes = c("id", "senateur", "profession", "circonscription")
+  libelles = c("ID", "Nom et pr\u00e9nom", "Profession", "Circonscription")
   # Largeur utile : 16,8 cm en A4 portrait (marges du modele).
-  largeurs = c(1.25, 3.6, 1.0, 4.8, 5.4)
+  largeurs = c(1.5, 4.2, 5.4, 5.1)
   spec = paste0("p{", sprintf("%.2f", largeurs), "cm}", collapse = "")
   ligne = function(x) paste(esc(x), collapse = " & ")
-  tableaux = vapply(unique(groupes), function(g) {
-    d = donnees[groupes == g, colonnes, drop = FALSE]
+  tableaux = vapply(seq_along(unique(groupes)), function(i) {
+    g = unique(groupes)[[i]]
+    indices = which(groupes == g)
+    indices = indices[order(!donnees$president[indices],
+                            donnees$nom[indices], donnees$prenom[indices])]
+    d = donnees[indices, colonnes, drop = FALSE]
     d[is.na(d)] = ""
-    lignes = apply(d, 1, function(x) paste0(ligne(x), " \\\\"))
-    paste0("\\subsection*{", esc(g), " (", nrow(d), ")}\n",
+    lignes = vapply(seq_len(nrow(d)), function(j) {
+      cellules = esc(unlist(d[j, ], use.names = FALSE))
+      if (isTRUE(donnees$president[indices[j]]))
+        cellules[2] = paste0("\\textbf{", cellules[2], "}")
+      paste0(if (j %% 2L == 0L) "\\rowcolor{gray!12} " else "",
+             paste(cellules, collapse = " & "), " \\\\")
+    }, character(1))
+    paste0(if (i > 1L) "\\clearpage\n" else "",
+           "\\subsection*{", esc(g), " (", nrow(d), ")}\n",
            "\\begin{longtable}{", spec, "}\n",
            "\\toprule\n", ligne(libelles), " \\\\ \\midrule\n",
            "\\endfirsthead\n",
@@ -95,10 +139,13 @@ produire_senateurs = function(
            paste(lignes, collapse = "\n"), "\n\\bottomrule\n",
            "\\end{longtable}\n")
   }, character(1))
+  note = if (type == "actif")
+    "\\noindent\\emph{Le ou la pr\u00e9sidente de chaque groupe politique figure en gras dans les tableaux ci-dessous.}\n\n"
+  else ""
   contenu = paste0("\\setlength{\\tabcolsep}{2pt}\n\\footnotesize\n",
-                   recap, "\\section*{Annuaire}\n",
+                   recap, note, "\\section*{Annuaire}\n\\scriptsize\n",
                    paste(tableaux, collapse = "\n"))
-  chemin = .pdf_senateurs(titres[[type]], paste0("Source : Senat - extraction locale du ", date_extraction),
+  chemin = .pdf_senateurs(titres[[type]], paste0("Source : S\u00e9nat - extraction locale du ", date_extraction),
                            contenu, sortie)
   .ouvrir_pdf_senateurs(chemin, ouvrir)
   invisible(chemin)

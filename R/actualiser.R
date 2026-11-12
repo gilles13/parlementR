@@ -1,7 +1,7 @@
 #' Actualiser les donnees parlementaires
 #'
 #' @param db Connexion DBI facultative ; NULL initialise la base au besoin.
-#' @param jeux Un ou plusieurs jeux : "deputes", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions".
+#' @param jeux Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions", "debats".
 #' @param cache Repertoire de cache persistant.
 #' @param archive Chemin facultatif vers une archive ZIP locale (un seul jeu).
 #' @param forcer Ignorer le delai de 24 heures et verifier le serveur ; ne force pas l'import si l'archive est inchangee.
@@ -10,7 +10,7 @@
 actualiser = function(db = NULL, jeux = "deputes",
                       cache = tools::R_user_dir("parlementR", "cache"),
                       archive = NULL, verbose = TRUE, forcer = FALSE) {
-  disponibles = c("deputes", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions")
+  disponibles = c("deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions", "debats")
   if (!length(jeux) || anyNA(jeux) || any(!jeux %in% disponibles) ||
       anyDuplicated(jeux))
     stop("Jeux attendus, sans doublon : ", paste(disponibles, collapse = ", "))
@@ -34,6 +34,10 @@ actualiser = function(db = NULL, jeux = "deputes",
   }
   tables = list(
     deputes = c("an_deputes.acteurs", "an_deputes.organes", "an_deputes.deports"),
+    historique = c("an_historique.acteurs", "an_historique.organes", "an_historique.deports"),
+    scrutins = "an_votes.scrutins",
+    debats = c("an_debats.debats_seances", "an_debats.debats_points",
+               "an_debats.debats_paragraphes"),
     dossiers = c("an_dossiers.dossiers", "an_dossiers.documents"),
     amendements = "an_amendements.amendements",
     senateurs = "senateurs",
@@ -72,7 +76,7 @@ actualiser = function(db = NULL, jeux = "deputes",
     precedent = .db_get_tibble(db, paste0(
       "SELECT coalesce(date_controle, date_import) AS dernier, md5, etag, modification ",
       "FROM suivi.actualisations WHERE jeu = ?"), params = list(jeu))
-    presentes = if (jeu %in% c("senateurs", "dosleg", "dole", "questions")) {
+    presentes = if (jeu %in% c("senateurs", "dosleg", "dole", "questions", "debats")) {
       n = .db_get_tibble(db, paste0(
         "SELECT count(*) AS n FROM information_schema.tables ",
         "WHERE table_schema = ? AND table_type = 'BASE TABLE'"),
@@ -124,6 +128,13 @@ actualiser = function(db = NULL, jeux = "deputes",
     if (jeu == "deputes") {
       .importer_deputes(db = db, cache = cache, archive = chemin_archive,
                        verbose = verbose)
+    } else if (jeu == "historique") {
+      .importer_historique(db = db, archive = chemin_archive, verbose = verbose)
+    } else if (jeu == "scrutins") {
+      .importer_scrutins(db = db, archive = chemin_archive, verbose = verbose)
+    } else if (jeu == "debats") {
+      .importer_debats(con = db, fichier = chemin_archive,
+                       remplacer = presentes, verbose = verbose)
     } else if (jeu == "dossiers") {
       .importer_dossiers(db = db, cache = cache, archive = chemin_archive,
                         verbose = verbose)

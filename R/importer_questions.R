@@ -50,8 +50,8 @@ importer_questions = function(archive, db = NULL, remplacer = FALSE, verbose = T
   dir.create(dossier)
   on.exit(unlink(dossier, recursive = TRUE), add = TRUE)
   lecteur = unz(archive, "questions.sql", open = "r")
-  fichiers = setNames(file.path(dossier, paste0(attendu, ".tsv")), attendu)
-  compteurs = setNames(numeric(length(attendu)), attendu)
+  fichiers = stats::setNames(file.path(dossier, paste0(attendu, ".tsv")), attendu)
+  compteurs = stats::setNames(numeric(length(attendu)), attendu)
   actif = NULL
   sortie = NULL
   on.exit(if (inherits(sortie, "connection") && isOpen(sortie)) close(sortie), add = TRUE)

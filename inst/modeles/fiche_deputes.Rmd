@@ -4,32 +4,62 @@ output:
   pdf_document:
     latex_engine: xelatex
     keep_tex: false
-geometry: "a4paper,left=1.5cm,right=1.5cm,top=1.7cm,bottom=1.5cm"
-fontsize: 9pt
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
 params:
   tableaux: !r list()
+  titre: ""
+  sous_titre: ""
+  logo: ""
   total: 0
   synthese: !r data.frame()
+  metadonnees: !r character()
+  source_url: ""
 header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
   - \usepackage{longtable}
   - \usepackage{booktabs}
-  - \usepackage{graphicx}
   - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
   - \definecolor{parlementBleu}{HTML}{17365D}
   - \definecolor{parlementClair}{HTML}{EAF0F6}
+  - \definecolor{provenanceGris}{HTML}{F0F1F2}
   - \setlength{\LTleft}{0pt}
   - \setlength{\LTright}{0pt}
 ---
 
-```{r entete, echo=FALSE, results='asis'}
-logo = system.file("assets", "logo_hexa.png", package = "parlementR")
-if (!nzchar(logo)) stop("Logo hexa introuvable.")
-cat("\\noindent\\begin{tabular*}{\\textwidth}{@{}p{0.78\\textwidth}@{\\extracolsep{\\fill}}r@{}}\n",
-    "{\\Large\\bfseries Députés par groupe parlementaire}\\par\\vspace{3pt}\n",
-    "XVIIe législature — ", params$total, " députés — Édition du ",
-    format(Sys.Date(), "%d/%m/%Y"),
-    " & \\raisebox{-0.7\\height}{\\includegraphics[width=1.13cm]{", logo, "}}\\\\\n",
-    "\\end{tabular*}\n\\par\\medskip\\hrule\\medskip\n\n", sep = "")
+```{r entete-commune, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+if (nzchar(params$logo)) {
+  cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+      params$logo, "}}}}\n", sep = "")
+} else {
+  cat("\\gdef\\senateurslogo{}\n")
+}
+cat("\\pagestyle{senateurs}\n")
+
+```
+
+```{r provenance, echo=FALSE, results='asis'}
+meta = params$metadonnees
+if (length(meta)) {
+  cat("\\noindent\\colorbox{provenanceGris}{\\begin{minipage}{\\dimexpr\\linewidth-2\\fboxsep\\relax}\n")
+  cat("{\\small\\bfseries Source et traçabilité des données}\\par\\vspace{1mm}\n")
+  for (i in seq_along(meta)) {
+    valeur = if (names(meta)[i] == "Source" && nzchar(params$source_url)) {
+      paste0("\\href{\\detokenize{", params$source_url,
+             "}}{", meta[i], "}")
+    } else meta[i]
+    cat("{\\scriptsize\\textbf{", parlementR:::.echapper_latex_senateurs(names(meta)[i]),
+        " :} ", valeur, "}\\par\n", sep = "")
+  }
+  cat("\\end{minipage}}\\par\\vspace{4mm}\n")
+}
 ```
 
 ```{r synthese, echo=FALSE, results='asis'}
@@ -57,8 +87,10 @@ for (i in seq_along(barres)) {
   latex = gsub(barres[i], barre, latex, fixed = TRUE)
 }
 cat("\\begingroup\\renewcommand{\\arraystretch}{1.45}\\small\n",
-    latex, "\n\\endgroup\n\\end{center}\n", sep = "")
+    parlementR:::.zebrer_tableau_pdf(latex), "\n\\endgroup\n\\end{center}\n", sep = "")
 ```
+
+La présidente ou le président de chaque groupe politique figure en gras dans les tableaux ci-dessous.
 
 ```{r groupes, echo=FALSE, results='asis'}
 for (i in seq_along(params$tableaux)) {
@@ -70,7 +102,17 @@ for (i in seq_along(params$tableaux)) {
   cat("\\begingroup\\footnotesize\n")
   latex = knitr::kable(tab, format = "latex", booktabs = TRUE,
                        longtable = TRUE, row.names = FALSE, escape = TRUE)
-  colonnes = if (ncol(tab) == 3L) "p{5.3cm}p{4.7cm}p{5.5cm}" else "p{7.5cm}p{8cm}"
+  # Les noms marques sont mis en gras apres l'echappement LaTeX par kable.
+  # Aucun autre champ du tableau n'est interprete comme du LaTeX.
+  lignes = strsplit(latex, "\n", fixed = TRUE)[[1]]
+  marquees = grep("PRESIDENTPARLEMENTR", lignes, fixed = TRUE)
+  for (j in marquees) {
+    cellules = strsplit(lignes[j], " & ", fixed = TRUE)[[1]]
+    cellules[1] = paste0("\\textbf{", sub("PRESIDENTPARLEMENTR", "", cellules[1], fixed = TRUE), "}")
+    lignes[j] = paste(cellules, collapse = " & ")
+  }
+  latex = paste(lignes, collapse = "\n")
+  colonnes = if (ncol(tab) == 3L) "p{4.8cm}p{3.8cm}p{7.0cm}" else "p{7.7cm}p{7.9cm}"
   lignes = strsplit(latex, "\n", fixed = TRUE)[[1]]
   lignes[startsWith(lignes, "\\begin{longtable}{")] = paste0("\\begin{longtable}{", colonnes, "}")
   # Un en-tete longtable explicite sur les pages suivantes.
@@ -81,7 +123,7 @@ for (i in seq_along(params$tableaux)) {
     en_tete = lignes[haut:milieu]
     lignes = append(lignes, c("\\endfirsthead", en_tete, "\\endhead"), after = milieu)
   }
-  cat(paste(lignes, collapse = "\n"), sep = "\n")
+  cat(parlementR:::.zebrer_tableau_pdf(paste(lignes, collapse = "\n")), sep = "\n")
   cat("\n\\endgroup\n\n")
 }
 ```

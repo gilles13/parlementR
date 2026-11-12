@@ -46,6 +46,12 @@ produire_dossier = function(uid, db = NULL, sortie = NULL, ouvrir = FALSE, pdf =
     "ORDER BY texte_ref, numero, uid"), params = as.list(documents$document_uid)) else
       tibble::tibble(uid = character(), numero = character(), sort = character(),
                  texte_ref = character())
+  for (colonne in c("titre", "procedure", "legislature"))
+    dossier[[colonne]] = .valeur_parlementaire(dossier[[colonne]], colonne)
+  for (colonne in c("titre", "date_depot", "date_publication", "date_creation"))
+    documents[[colonne]] = .valeur_parlementaire(documents[[colonne]], colonne)
+  for (colonne in c("numero", "sort", "texte_ref"))
+    amendements[[colonne]] = .valeur_parlementaire(amendements[[colonne]], colonne)
   resultat = list(dossier = dossier, documents = documents, amendements = amendements)
   if (!isTRUE(pdf)) return(resultat)
   if (is.null(sortie)) sortie = file.path("/tmp", paste0("parlementR-dossier-", uid, ".pdf"))
@@ -63,7 +69,7 @@ produire_dossier = function(uid, db = NULL, sortie = NULL, ouvrir = FALSE, pdf =
   }
   documents$titre = nettoyer(documents$titre)
   amendements$sort = nettoyer(amendements$sort)
-  amendements$sort[!nzchar(trimws(amendements$sort))] = "Non renseigne"
+  amendements$sort[!nzchar(trimws(amendements$sort))] = "Non renseign\u00e9"
   resume = if (nrow(amendements)) {
     comptes = table(amendements$sort)
     x = tibble::tibble(Sort = names(comptes), Nombre = as.integer(comptes))
@@ -82,12 +88,12 @@ produire_dossier = function(uid, db = NULL, sortie = NULL, ouvrir = FALSE, pdf =
   date_courte = function(x) ifelse(grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}", x),
                                    substr(x, 1L, 10L), "")
   documents$date_affichee = ifelse(nzchar(date_courte(documents$date_depot)),
-    paste0("Depot\\newline ", date_courte(documents$date_depot)),
+    paste0("D\u00e9p\u00f4t\\newline ", date_courte(documents$date_depot)),
     ifelse(nzchar(date_courte(documents$date_publication)),
       paste0("Publication\\newline ", date_courte(documents$date_publication)),
       ifelse(nzchar(date_courte(documents$date_creation)),
-        paste0("Creation\\newline ", date_courte(documents$date_creation)),
-        "Date non renseignee")))
+        paste0("Cr\u00e9ation\\newline ", date_courte(documents$date_creation)),
+        "Date non renseign\u00e9e")))
   tableau_documents = if (nrow(documents)) {
     # Le titre occupe toute la largeur utile ; la reference reste accessible
     # en dessous, en caracteres reduits. La date a sa propre colonne.
@@ -96,33 +102,34 @@ produire_dossier = function(uid, db = NULL, sortie = NULL, ouvrir = FALSE, pdf =
                     "\\midrule\n\\endhead\n")
     lignes = vapply(seq_len(nrow(documents)), function(i) {
       titre_document = documents$titre[i]
-      if (!nzchar(titre_document)) titre_document = "Titre non renseigne"
+      if (!nzchar(titre_document)) titre_document = "Titre non renseign\u00e9"
       paste0(echapper(titre_document),
              "\\newline{\\footnotesize\\texttt{",
              echapper(documents$document_uid[i]), "}}",
              " & {\\footnotesize ", documents$date_affichee[i],
              "} \\\\")
     }, character(1))
-    paste0(entete, paste(lignes, collapse = "\n"),
+    paste0(entete, paste(ifelse(seq_along(lignes) %% 2L == 0L,
+                              paste0("\\rowcolor{gray!12} ", lignes), lignes), collapse = "\n"),
            "\n\\bottomrule\n\\end{longtable}")
-  } else "Aucun document rattache dans la base locale."
+  } else "Aucun document rattach\u00e9 dans la base locale."
   tableau_amendements = if (nrow(resume)) {
-    knitr::kable(resume, format = "latex", booktabs = TRUE, escape = TRUE,
-                 row.names = FALSE)
-  } else "Aucun amendement relie par reference de texte dans la base locale."
+    .zebrer_tableau_pdf(knitr::kable(resume, format = "latex", booktabs = TRUE, escape = TRUE,
+                 row.names = FALSE))
+  } else "Aucun amendement reli\u00e9 par r\u00e9f\u00e9rence de texte dans la base locale."
   contenu = c(
     paste0("\\noindent\\textbf{Identifiant officiel :} ", echapper(uid), "\\par\\smallskip"),
     paste0("\\noindent\\colorbox{blue!9}{\\parbox{\\dimexpr\\linewidth-2\\fboxsep\\relax}{",
            "\\textbf{Sujet :} ", echapper(titre), "}}\\par\\medskip"),
-    paste0("\\noindent\\textbf{Procedure :} ", echapper(dossier$procedure[[1L]]), "\\par"),
-    paste0("\\noindent\\textbf{Legislature :} ", echapper(dossier$legislature[[1L]]), "\\par"),
-    "\\section*{Documents officiellement rattaches}",
+    paste0("\\noindent\\textbf{Proc\u00e9dure :} ", echapper(dossier$procedure[[1L]]), "\\par"),
+    paste0("\\noindent\\textbf{L\u00e9gislature :} ", echapper(dossier$legislature[[1L]]), "\\par"),
+    "\\section*{Documents officiellement rattach\u00e9s}",
     tableau_documents,
-    "\\section*{Amendements relies par reference de texte}",
+    "\\section*{Amendements reli\u00e9s par r\u00e9f\u00e9rence de texte}",
     paste0("\\noindent Total : ", nrow(amendements), " amendement(s).\\par"),
     tableau_amendements
   )
-  chemin = .pdf_senateurs("Assemblee nationale - Dossier legislatif", titre,
+  chemin = .pdf_senateurs("Assembl\u00e9e nationale - Dossier l\u00e9gislatif", titre,
                           paste(contenu, collapse = "\n\n"), sortie)
   .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
 }

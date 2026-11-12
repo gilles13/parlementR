@@ -95,7 +95,8 @@ senateurs_synthese = function(
            paste(esc(entetes), collapse = " & "), " \\\\ \\midrule\n",
            "\\endfirsthead\n\\toprule\n", paste(esc(entetes), collapse = " & "),
            " \\\\ \\midrule\n\\endhead\n",
-           paste(lignes, collapse = "\n"), "\n\\bottomrule\n\\end{longtable}\n")
+           paste(ifelse(seq_along(lignes) %% 2L == 0L,
+                        paste0("\\rowcolor{gray!12} ", lignes), lignes), collapse = "\n"), "\n\\bottomrule\n\\end{longtable}\n")
   }
   compter = function(variable) {
     x = as.character(variable)

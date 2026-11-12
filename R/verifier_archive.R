@@ -13,9 +13,17 @@
     return(list(url = "https://data.senat.fr/data/questions/questions.zip",
                 chemin = file.path(cache, "senat", "questions", "questions.zip")))
   }
+  if (identical(jeu, "debats")) {
+    return(list(
+      url = paste0(racine, "vp/syceronbrut/syseron.xml.zip"),
+      chemin = file.path(cache, "syseron.xml.zip")))
+  }
   specification = switch(jeu,
     deputes = c("amo/deputes_actifs_mandats_actifs_organes/",
                 "AMO10_deputes_actifs_mandats_actifs_organes.json.zip", "amo10"),
+    historique = c("amo/tous_acteurs_mandats_organes_xi_legislature/",
+                   "AMO30_tous_acteurs_tous_mandats_tous_organes_historique.json.zip", "amo30"),
+    scrutins = c("loi/scrutins/", "Scrutins.json.zip", "scrutins"),
     dossiers = c("loi/dossiers_legislatifs/", "Dossiers_Legislatifs.json.zip", "dossiers_legislatifs"),
     amendements = c("loi/amendements_div_legis/", "Amendements.json.zip", "amendements"))
   list(url = paste0(racine, specification[1], specification[2]),

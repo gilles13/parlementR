@@ -1,47 +1,82 @@
 # parlementR
 
-**Comprendre l'activité parlementaire française à partir de données ouvertes, documentées et reproductibles.**
+**Explorer les travaux parlementaires français à partir de données publiques officielles, conservées et interrogées localement.**
 
-`parlementR` importe les données parlementaires officielles dans DuckDB en conservant les documents sources complets. Le projet vise à faciliter l'analyse des acteurs, mandats, textes et débats et, à terme, la production de documents PDF retraçant le parcours législatif.
+`parlementR` est un package R de collecte, de documentation et d’analyse des données de l’Assemblée nationale et du Sénat. Les archives officielles sont téléchargées pour l’importation et les mises à jour ; les recherches et traitements sont réalisés dans une base **DuckDB locale**, sans requêtes d’analyse à distance.
 
-## Installation
+## Installer
 
 ```r
-install.packages("remotes") # si nécessaire
 remotes::install_github("gilles13/parlementR")
 ```
 
-## Première source : AMO10
+Le package est en développement (`0.0.2`). L’installation depuis GitHub nécessite le package `remotes`.
 
-Les députés en exercice, leurs mandats et organes associés (Assemblée nationale, XVIIe législature) sont importés dans le schéma `an_deputes` de DuckDB.
+## Démarrer
 
 ```r
-chemin = file.path(tools::R_user_dir("parlementR", "data"), "parlementR.duckdb")
-dir.create(dirname(chemin), recursive = TRUE, showWarnings = FALSE)
-db = DBI::dbConnect(duckdb::duckdb(), dbdir = chemin)
-parlementR::actualiser(db)
+library(parlementR)
+
+db = connexion(creer = TRUE)
+actualiser(db = db, jeux = "deputes")
+fiche_deputes(db = db, fichier = "/tmp/parlementR-deputes.pdf")
+fermer_base()
+```
+
+`connexion()` utilise par défaut `file.path(tools::R_user_dir("parlementR", "data"), "parlementR.duckdb")`. Il est possible de préciser `chemin = ...` pour réutiliser une base existante, notamment dans le cache. Les archives téléchargées sont conservées dans `tools::R_user_dir("parlementR", "cache")`.
+
+## Données disponibles
+
+| Institution | Jeu | Actualisation | Stockage principal |
+|---|---|---|---|
+| Assemblée nationale | Députés actifs (AMO10) | `actualiser(db, jeux = "deputes")` | `an_deputes` |
+| Assemblée nationale | Historique des acteurs | `actualiser(db, jeux = "historique")` | `an_historique` |
+| Assemblée nationale | Scrutins | `actualiser(db, jeux = "scrutins")` | `an_votes` |
+| Assemblée nationale | Dossiers législatifs | `actualiser(db, jeux = "dossiers")` | `an_dossiers` |
+| Assemblée nationale | Amendements | `actualiser(db, jeux = "amendements")` | `an_amendements` |
+| Assemblée nationale | Débats Syceron | `actualiser(db, jeux = "debats")` | `an_debats` |
+| Sénat | Sénateurs | `actualiser(db, jeux = "senateurs")` | `senateurs` |
+| Sénat | Questions | `actualiser(db, jeux = "questions")` | `sen_questions` |
+| Sénat | Dossiers DOSLEG / DOLE | `actualiser(db, jeux = "dosleg")` / `actualiser(db, jeux = "dole")` | `sen_dosleg` / `dila_dole` |
+
+L’import initial de certains jeux peut prendre plusieurs minutes. Pour les débats Syceron, une archive observée le 12 novembre 2026 contenait 660 fichiers XML (environ 59 Mo). Les effectifs changent au fil des publications.
+
+## Exemples d’analyse
+
+```r
+# Après importation des jeux correspondants :
+actualiser(db = db, jeux = "amendements")
+rapport_legislatif(db, "logement", pdf = FALSE)
+
+# Exploitation des débats déjà importés :
+DBI::dbGetQuery(db, "SELECT count(*) AS seances FROM an_debats.debats_seances")
+```
+
+Les recherches parlementaires sont exécutées sur la base locale. Les liens entre scrutins et amendements ne sont pas encore reconstruits automatiquement à partir des débats.
+
+## Documentation et reproductibilité
+
+- [Guide : comprendre la vie parlementaire](vignettes/comprendre-vie-parlementaire.Rmd)
+- [Documentation des sources et des imports](vignettes/documentation.Rmd)
+- [À propos du projet](vignettes/apropos.Rmd)
+- [Historique des versions](NEWS.md)
+- [Fiche AMO10](inst/documentation/sources/AMO10.md) et [inventaire JSON](inst/documentation/sources/AMO10_champs.csv)
+- [Fiche Syceron](inst/documentation/sources/Syceron.md)
+- [Fiche Amendements](inst/documentation/sources/Amendements.md)
+- [Fiche Dossiers législatifs](inst/documentation/Dossiers_legislatifs.md)
+
+La table `suivi.actualisations` conserve les dates de dernière importation et de contrôle, ainsi que les métadonnées HTTP disponibles. Ce suivi n’est pas un archivage exhaustif de toutes les versions des données.
+
+## Extension DuckDB ICU
+
+Certaines dates avec fuseau horaire nécessitent l’extension DuckDB `icu`. Son installation est une opération ponctuelle, à répéter éventuellement après une mise à jour de DuckDB :
+
+```r
+db = DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+DBI::dbExecute(db, "INSTALL icu")
 DBI::dbDisconnect(db, shutdown = TRUE)
 ```
 
-Les archives sont mises en cache dans `tools::R_user_dir("parlementR", "cache")`, indépendamment de la base persistante.
+`connexion()` charge ensuite l’extension installée avec `LOAD icu`, sans téléchargement.
 
-## Documentation
-
-- [À propos](vignettes/apropos.Rmd) : objectifs et sources ouvertes.
-- [Documentation des sources](vignettes/documentation.Rmd) : index des fiches techniques.
-- [AMO10](inst/documentation/AMO10.md) et [inventaire de ses champs JSON](inst/documentation/AMO10_champs.csv).
-
-Site du package : <https://gilles13.github.io/parlementR/> (après publication via pkgdown).
-
-Deuxième source : **dossiers législatifs** (`actualiser(db, jeux = "dossiers")`), dans le schéma `an_dossiers`. [Documentation](inst/documentation/Dossiers_legislatifs.md) et [inventaire JSON](inst/documentation/Dossiers_legislatifs_champs.csv).
-
-## Amendements et rapports thématiques
-
-```r
-actualiser(db, jeux = "amendements")
-x = rapport_legislatif(db, "logement", pdf = FALSE)
-rapport_legislatif(db, "logement")
-```
-
-L'import utilise l'archive JSON officielle de la XVIIe législature, conservée
-en cache. Les recherches et la génération PDF ne font aucun appel réseau.
+Site du projet : <https://gilles13.github.io/parlementR/>

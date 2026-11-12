@@ -27,7 +27,7 @@ rechercher_dossiers = function(sujet, db = NULL, limite = 50L) {
     ), r AS (
       SELECT d.*,
         CASE WHEN d.titre ILIKE ? THEN 'Titre du dossier'
-             ELSE 'Titre d’un document' END AS correspondance,
+             ELSE 'Titre d\u2019un document' END AS correspondance,
         CASE WHEN d.titre ILIKE ? THEN 0 ELSE 1 END AS rang
       FROM d
       WHERE d.titre ILIKE ? OR EXISTS (

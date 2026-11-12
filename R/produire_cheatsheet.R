@@ -1,24 +1,21 @@
 #' Produire la cheatsheet PDF de parlementR
 #'
 #' Genere une fiche A4 paysage, en trois colonnes, selon le modele
-#' de la cheatsheet assembleer. Necessite assembleer et Chromium.
+#' de la cheatsheet assembleer. Necessite Chromium.
 #' @param sortie Chemin du PDF produit.
 #' @param ouvrir Ouvrir le PDF apres generation.
 #' @return Chemin du PDF, invisiblement.
 #' @export
 produire_cheatsheet = function(sortie = "/tmp/parlementR-cheatsheet.pdf", ouvrir = TRUE) {
-  if (!requireNamespace("assembleer", quietly = TRUE)) {
-    stop("Installer assembleer pour produire la cheatsheet PDF de parlementR.", call. = FALSE)
-  }
   navigateur = Sys.which("chromium")
   if (!nzchar(navigateur)) navigateur = Sys.which("chromium-browser")
   if (!nzchar(navigateur)) {
     stop("Chromium est necessaire pour imprimer la cheatsheet en PDF.", call. = FALSE)
   }
   modele = system.file("modeles", "cheatsheet.html", package = "parlementR")
-  logo = system.file("assets", "logo_hexa.png", package = "assembleer")
+  logo = system.file("assets", "logo_hexa.png", package = "parlementR")
   if (!nzchar(modele) || !nzchar(logo)) {
-    stop("Modele parlementR ou logo assembleer introuvable.", call. = FALSE)
+    stop("Modele ou logo parlementR introuvable.", call. = FALSE)
   }
   sortie = normalizePath(sortie, mustWork = FALSE)
   dir.create(dirname(sortie), recursive = TRUE, showWarnings = FALSE)

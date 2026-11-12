@@ -56,6 +56,12 @@ rapport_legislatif = function(db = NULL, sujet = NULL, fichier = NULL, limite = 
     params = as.list(documents$document_uid)) else
       tibble::tibble(uid = character(), numero = character(), sort = character(),
                  texte_ref = character(), expose = character())
+  for (colonne in c("titre", "procedure", "legislature"))
+    dossiers[[colonne]] = .valeur_parlementaire(dossiers[[colonne]], colonne)
+  for (colonne in c("titre", "date_depot"))
+    documents[[colonne]] = .valeur_parlementaire(documents[[colonne]], colonne)
+  for (colonne in c("numero", "sort", "texte_ref", "expose"))
+    amendements[[colonne]] = .valeur_parlementaire(amendements[[colonne]], colonne)
   resultat = list(dossiers = dossiers, documents = documents, amendements = amendements)
   if (!pdf) return(resultat)
   if (is.null(fichier)) fichier = file.path(tempdir(), "parlementR-rapport-legislatif.pdf")
@@ -68,7 +74,10 @@ rapport_legislatif = function(db = NULL, sujet = NULL, fichier = NULL, limite = 
   dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
   sortie = rmarkdown::render(modele, output_file = basename(fichier),
     output_dir = normalizePath(dirname(fichier)),
-    params = c(list(sujet = sujet), resultat), quiet = TRUE,
+    params = c(list(sujet = sujet,
+      titre = .echapper_latex_senateurs("Assembl\u00e9e nationale - Rapport l\u00e9gislatif"),
+      sous_titre = .echapper_latex_senateurs(sujet),
+      logo = .logo_pdf_parlementR()), resultat), quiet = TRUE,
     envir = new.env(parent = globalenv()))
   invisible(normalizePath(sortie))
 }

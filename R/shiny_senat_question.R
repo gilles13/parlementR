@@ -12,7 +12,7 @@ shiny_senat_question = function(db = NULL) {
   requis = c("shiny", "DT")
   manquants = requis[!vapply(requis, requireNamespace, logical(1), quietly = TRUE)]
   if (length(manquants)) stop(
-    "L'interface des questions du Sénat nécessite les packages facultatifs : ",
+    "L'interface des questions du S\u00e9nat n\u00e9cessite les packages facultatifs : ",
     paste(manquants, collapse = ", "), ".\n",
     "Pour les installer : install.packages(c('shiny', 'DT')).\n",
     "Si vous ne souhaitez pas les installer, vous ne pourrez pas utiliser ",
@@ -21,7 +21,7 @@ shiny_senat_question = function(db = NULL) {
   db = .connexion_valide(db)
   DBI::dbExecute(db, "SET enable_progress_bar = false")
   themes = lister_themes(db = db)
-  choix = c("Choisir un thème" = "", stats::setNames(
+  choix = c("Choisir un th\u00e8me" = "", stats::setNames(
     themes$theme, paste0(themes$theme, " (", themes$questions, ")")))
   afficher_texte = function(x) {
     if (!length(x) || is.na(x[[1L]]) || !nzchar(trimws(x[[1L]])))
@@ -29,12 +29,12 @@ shiny_senat_question = function(db = NULL) {
     shiny::tags$p(style = "white-space: pre-wrap;", x[[1L]])
   }
   ui = shiny::fluidPage(
-    shiny::titlePanel("parlementR — Questions du Sénat"),
+    shiny::titlePanel("parlementR \u2014 Questions du S\u00e9nat"),
     shiny::sidebarLayout(
       shiny::sidebarPanel(
-        shiny::selectInput("theme", "Thème", choices = choix),
-        shiny::textInput("texte", "Recherche", placeholder = "Mot-clé facultatif"),
-        shiny::numericInput("limite", "Nombre de résultats", value = 100,
+        shiny::selectInput("theme", "Th\u00e8me", choices = choix),
+        shiny::textInput("texte", "Recherche", placeholder = "Mot-cl\u00e9 facultatif"),
+        shiny::numericInput("limite", "Nombre de r\u00e9sultats", value = 100,
                             min = 5, max = 1000),
         shiny::actionButton("chercher", "Rechercher", class = "btn-primary")
       ),
@@ -52,9 +52,9 @@ shiny_senat_question = function(db = NULL) {
     })
     output$questions = DT::renderDT({
       shiny::validate(shiny::need(input$chercher > 0,
-        "Choisissez un thème ou saisissez un mot-clé, puis cliquez sur Rechercher."))
+        "Choisissez un th\u00e8me ou saisissez un mot-cl\u00e9, puis cliquez sur Rechercher."))
       x = resultats()
-      shiny::validate(shiny::need(nrow(x) > 0, "Aucune question trouvée"))
+      shiny::validate(shiny::need(nrow(x) > 0, "Aucune question trouv\u00e9e"))
       DT::datatable(x[, c("date", "reference", "titre", "nom", "rubrique", "etat")],
         rownames = FALSE, selection = "single",
         options = list(pageLength = 5, lengthMenu = c(5, 10, 25, 50),
@@ -74,12 +74,12 @@ shiny_senat_question = function(db = NULL) {
       shiny::req(nrow(fiche) > 0)
       shiny::tagList(
         shiny::h3(fiche$titre[[1L]]),
-        shiny::p(shiny::strong("Référence : "), fiche$reference[[1L]]),
+        shiny::p(shiny::strong("R\u00e9f\u00e9rence : "), fiche$reference[[1L]]),
         shiny::h4("Question"), afficher_texte(fiche$txtque),
-        shiny::hr(), shiny::h4("Réponses"),
-        if (!nrow(reponses)) shiny::tags$em("Aucune réponse enregistrée")
+        shiny::hr(), shiny::h4("R\u00e9ponses"),
+        if (!nrow(reponses)) shiny::tags$em("Aucune r\u00e9ponse enregistr\u00e9e")
         else lapply(seq_len(nrow(reponses)), function(i) shiny::tagList(
-          shiny::h5(paste("Réponse du", reponses$datejorep[[i]])),
+          shiny::h5(paste("R\u00e9ponse du", reponses$datejorep[[i]])),
           afficher_texte(reponses$txtrep[i]), shiny::hr()))
       )
     })

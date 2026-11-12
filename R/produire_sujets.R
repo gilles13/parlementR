@@ -27,9 +27,9 @@ produire_sujets = function(sujet, db = NULL, limite = 100L,
     lignes = vapply(seq_len(nrow(dossiers)), function(i) {
       d = dossiers[i, ]
       nom = d$titre[[1]]
-      if (is.na(nom) || !nzchar(trimws(nom))) nom = 'Titre non renseigne'
+      if (is.na(nom) || !nzchar(trimws(nom))) nom = 'Titre non renseign\u00e9'
       procedure = d$procedure[[1]]
-      if (is.na(procedure) || !nzchar(procedure)) procedure = 'Procedure non renseignee'
+      if (is.na(procedure) || !nzchar(procedure)) procedure = 'Proc\u00e9dure non renseign\u00e9e'
       legislature = d$legislature[[1]]
       if (is.na(legislature) || !nzchar(legislature)) legislature = '?'
       date = d$date[[1]]
@@ -37,13 +37,15 @@ produire_sujets = function(sujet, db = NULL, limite = 100L,
       paste0('{\\footnotesize ', echapper(date), '} & ',
              '\\textbf{', echapper(nom), '}',
              '\\par{\\footnotesize\\texttt{', echapper(d$uid[[1]]),
-             '} \\quad Legislature ', echapper(legislature),
+             '} \\quad L\u00e9gislature ', echapper(legislature),
              ' \\quad ', echapper(procedure),
              ' }',
              ' \\\\')
     }, character(1))
+    lignes = ifelse(seq_along(lignes) %% 2L == 0L,
+                    paste0("\\rowcolor{gray!12} ", lignes), lignes)
     tableau = paste0('\\begin{longtable}{@{}p{2.0cm}p{13.4cm}@{}}\n',
-                     '\\toprule\nDate & Sujet et reference \\\\ \\midrule\n\\endhead\n',
+                     '\\toprule\nDate & Sujet et r\u00e9f\u00e9rence \\\\ \\midrule\n\\endhead\n',
                      paste(lignes, collapse = '\n\\addlinespace[5pt]\n\\midrule\n'),
                      '\n\\bottomrule\n\\end{longtable}')
   } else {
@@ -51,13 +53,13 @@ produire_sujets = function(sujet, db = NULL, limite = 100L,
   }
   contenu = c(
     paste0('\\noindent\\colorbox{blue!9}{\\parbox{\\dimexpr\\linewidth-2\\fboxsep\\relax}{',
-           '\\textbf{Sujet recherche :} ', echapper(titre), '}}\\par\\medskip'),
-    paste0('\\noindent ', nrow(dossiers), ' dossier(s) trouve(s).\\par'),
+           '\\textbf{Sujet recherch\u00e9 :} ', echapper(titre), '}}\\par\\medskip'),
+    paste0('\\noindent ', nrow(dossiers), ' dossier(s) trouv\u00e9(s).\\par'),
     '\\noindent{\\footnotesize Les identifiants officiels permettent de consulter chaque dossier avec ',
     '\\texttt{produire\\_dossier(uid, db = db)}.}\\par\\medskip',
     tableau
   )
-  chemin = .pdf_senateurs('Assemblee nationale - Recherche de sujets', titre,
+  chemin = .pdf_senateurs('Assembl\u00e9e nationale - Recherche de sujets', titre,
                           paste(contenu, collapse = '\n\n'), sortie)
   .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
 }

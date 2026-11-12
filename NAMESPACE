@@ -23,3 +23,6 @@ export(lister_themes)
 export(shiny_senat_question)
 
 export(produire_cheatsheet)
+
+export(fiche_depute)
+export(produire_fiche_depute)

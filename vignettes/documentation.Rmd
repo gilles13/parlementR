@@ -53,6 +53,19 @@ DBI::dbGetQuery(db, "SELECT * FROM suivi.actualisations")
 
 
 
+## Sénat — amendements AMELI
+
+- [Documentation technique AMELI](https://github.com/gilles13/parlementR/blob/main/inst/documentation/sources/AMELI.md) : source officielle, restauration PostgreSQL, 29 tables DuckDB, contrôles et limites.
+
+L'archive officielle du Sénat est importée dans `sen_amendements`. Le contrôle distant est hebdomadaire ; les analyses sont exclusivement locales. La restauration nécessite les exécutables PostgreSQL (`initdb`, `pg_ctl`, `psql`), `unzip` et le package R `RPostgres`.
+
+```r
+actualiser(jeux = "ameli")
+# Ou depuis un ZIP local :
+# actualiser(jeux = "ameli", archive = "/chemin/ameli.zip")
+DBI::dbGetQuery(connexion(), "SELECT count(*) AS n FROM sen_amendements.amd")
+```
+
 ## Sénat — sénateurs
 
 L'archive officielle `https://data.senat.fr/data/senateurs/export_sens.zip`

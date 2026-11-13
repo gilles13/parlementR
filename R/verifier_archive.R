@@ -1,6 +1,10 @@
 # URLs officielles, identiques a celles des importeurs existants.
 .source_archive = function(jeu, cache) {
   racine = "https://data.assemblee-nationale.fr/static/openData/repository/17/"
+  if (identical(jeu, "ameli")) {
+    return(list(url = "https://data.senat.fr/data/ameli/ameli.zip",
+                chemin = file.path(cache, "senat", "ameli", "ameli.zip")))
+  }
   if (identical(jeu, "senateurs")) {
     return(list(url = "https://data.senat.fr/data/senateurs/export_sens.zip",
                 chemin = file.path(cache, "senat", "senateurs", "export_sens.zip")))
@@ -9,7 +13,7 @@
     return(list(url = "https://data.senat.fr/data/dosleg/dosleg.zip",
                 chemin = file.path(cache, "senat", "dosleg", "dosleg.zip")))
   }
-  if (identical(jeu, "questions")) {
+  if (identical(jeu, "questions_senat")) {
     return(list(url = "https://data.senat.fr/data/questions/questions.zip",
                 chemin = file.path(cache, "senat", "questions", "questions.zip")))
   }
@@ -24,6 +28,7 @@
     historique = c("amo/tous_acteurs_mandats_organes_xi_legislature/",
                    "AMO30_tous_acteurs_tous_mandats_tous_organes_historique.json.zip", "amo30"),
     scrutins = c("loi/scrutins/", "Scrutins.json.zip", "scrutins"),
+    reunions = c("vp/reunions/", "Agenda.json.zip", "reunions"),
     dossiers = c("loi/dossiers_legislatifs/", "Dossiers_Legislatifs.json.zip", "dossiers_legislatifs"),
     amendements = c("loi/amendements_div_legis/", "Amendements.json.zip", "amendements"))
   list(url = paste0(racine, specification[1], specification[2]),
@@ -50,8 +55,8 @@
   journal = function(...) if (isTRUE(verbose)) message("[", toupper(jeu), "] ", ...)
   entetes = tempfile("parlementR-head-")
   on.exit(unlink(entetes), add = TRUE)
-  args = c("--http1.1", "-sS", "-L", "-I", "--connect-timeout", "8",
-           "--max-time", "25", "-D", shQuote(entetes), "-o", "/dev/null",
+  args = c("--http1.1", "-sS", "-L", "-I", "--connect-timeout", "30",
+           "--max-time", "60", "-D", shQuote(entetes), "-o", "/dev/null",
            "-w", shQuote("%{http_code}"))
   if (!is.na(etag) && nzchar(etag)) {
     args = c(args, "-H", shQuote(paste0("If-None-Match: ", etag)))
@@ -82,7 +87,7 @@
   entetes = tempfile("parlementR-get-")
   on.exit(unlink(c(temporaire, entetes)), add = TRUE)
   journal("Telechargement du ZIP : ", url)
-  statut = system2("curl", c("--http1.1", "-fL", "--connect-timeout", "8",
+  statut = system2("curl", c("--http1.1", "-fL", "--connect-timeout", "30",
      "--speed-time", "60", "--speed-limit", "1024", "--retry", "1",
      "-D", shQuote(entetes), "-o", shQuote(temporaire), shQuote(url)),
      stdout = if (isTRUE(verbose)) "" else FALSE,

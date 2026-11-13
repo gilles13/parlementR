@@ -27,7 +27,7 @@
 #' @param verbose Afficher les effectifs et horodatages.
 #' @return Invisiblement, un tibble des effectifs par table.
 #' @export
-importer_questions = function(archive, db = NULL, remplacer = FALSE, verbose = TRUE) {
+importer_questions_senat = function(archive, db = NULL, remplacer = FALSE, verbose = TRUE) {
   archive = path.expand(archive)
   if (!is.character(archive) || length(archive) != 1L || is.na(archive) ||
       !file.exists(archive)) stop("Archive questions.zip introuvable")
@@ -40,7 +40,7 @@ importer_questions = function(archive, db = NULL, remplacer = FALSE, verbose = T
   attendu = c("etatquestion", "legquestion", "naturequestion", "sortquestion",
               "tam_ministeres", "tam_questions", "tam_reponses", "the")
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [QUESTIONS] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [QUESTIONS_SENAT] ", ...)
   lecteur = unz(archive, "questions.sql", open = "r")
   on.exit(if (inherits(lecteur, "connection") && isOpen(lecteur)) close(lecteur), add = TRUE)
   definitions = .dosleg_structure(lecteur)

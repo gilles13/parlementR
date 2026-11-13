@@ -31,12 +31,15 @@ fermer_base()
 |---|---|---|---|
 | Assemblée nationale | Députés actifs (AMO10) | `actualiser(db, jeux = "deputes")` | `an_deputes` |
 | Assemblée nationale | Historique des acteurs | `actualiser(db, jeux = "historique")` | `an_historique` |
+| Assemblée nationale | Réunions | `actualiser(db, jeux = "reunions")` | `an_reunions` |
 | Assemblée nationale | Scrutins | `actualiser(db, jeux = "scrutins")` | `an_votes` |
 | Assemblée nationale | Dossiers législatifs | `actualiser(db, jeux = "dossiers")` | `an_dossiers` |
 | Assemblée nationale | Amendements | `actualiser(db, jeux = "amendements")` | `an_amendements` |
 | Assemblée nationale | Débats Syceron | `actualiser(db, jeux = "debats")` | `an_debats` |
+| Sénat | Amendements AMELI | `actualiser(db, jeux = "ameli")` | `sen_amendements` |
 | Sénat | Sénateurs | `actualiser(db, jeux = "senateurs")` | `senateurs` |
-| Sénat | Questions | `actualiser(db, jeux = "questions")` | `sen_questions` |
+| Sénat | Questions | `actualiser(db, jeux = "questions_senat")` | `sen_questions` |
+| Assemblée nationale | Questions QE, QOSD, QG | `actualiser(db, jeux = "questions_an")` | `an_questions.questions` |
 | Sénat | Dossiers DOSLEG / DOLE | `actualiser(db, jeux = "dosleg")` / `actualiser(db, jeux = "dole")` | `sen_dosleg` / `dila_dole` |
 
 L’import initial de certains jeux peut prendre plusieurs minutes. Pour les débats Syceron, une archive observée le 12 novembre 2026 contenait 660 fichiers XML (environ 59 Mo). Les effectifs changent au fil des publications.
@@ -63,6 +66,7 @@ Les recherches parlementaires sont exécutées sur la base locale. Les liens ent
 - [Fiche AMO10](inst/documentation/sources/AMO10.md) et [inventaire JSON](inst/documentation/sources/AMO10_champs.csv)
 - [Fiche Syceron](inst/documentation/sources/Syceron.md)
 - [Fiche Amendements](inst/documentation/sources/Amendements.md)
+- [Fiche AMELI — amendements du Sénat](inst/documentation/sources/AMELI.md)
 - [Fiche Dossiers législatifs](inst/documentation/Dossiers_legislatifs.md)
 
 La table `suivi.actualisations` conserve les dates de dernière importation et de contrôle, ainsi que les métadonnées HTTP disponibles. Ce suivi n’est pas un archivage exhaustif de toutes les versions des données.

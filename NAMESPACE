@@ -8,12 +8,14 @@ export(fermer_base)
 export(fiche_senateur)
 export(produire_fiche_senateur)
 export(importer_dosleg)
+export(importer_ameli)
 export(produire_dossier)
 
 export(rechercher_dossiers)
 
 export(produire_sujets)
-export(importer_questions)
+export(importer_questions_an)
+export(importer_questions_senat)
 export(rechercher_questions)
 export(consulter_question)
 export(produire_questions)
@@ -26,3 +28,11 @@ export(produire_cheatsheet)
 
 export(fiche_depute)
 export(produire_fiche_depute)
+
+export(graphique_hemicycle)
+
+export(produire_suivi_amendement)
+export(rechercher_amendements)
+export(produire_rapport_vote)
+
+export(relier_amendements_scrutins)

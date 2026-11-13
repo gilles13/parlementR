@@ -13,6 +13,7 @@ params:
   logo: ""
   total: 0
   synthese: !r data.frame()
+  hemicycle: !r NULL
   metadonnees: !r character()
   source_url: ""
 header-includes:
@@ -88,6 +89,10 @@ for (i in seq_along(barres)) {
 }
 cat("\\begingroup\\renewcommand{\\arraystretch}{1.45}\\small\n",
     parlementR:::.zebrer_tableau_pdf(latex), "\n\\endgroup\n\\end{center}\n", sep = "")
+```
+
+```{r hemicycle, echo=FALSE, fig.width=7.0, fig.height=3.2, out.width="\\linewidth", fig.align='center'}
+if (!is.null(params$hemicycle)) print(params$hemicycle)
 ```
 
 La présidente ou le président de chaque groupe politique figure en gras dans les tableaux ci-dessous.

@@ -120,6 +120,10 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
     .name_repair = "minimal"
   )
   synthese = synthese[order(-synthese$Deputes, synthese$Groupe), , drop = FALSE]
+  effectifs = data.frame(groupe = deputes$sigle, n = 1L) |>
+    dplyr::group_by(groupe) |>
+    dplyr::summarise(n = sum(n), .groups = "drop")
+  hemicycle = if (all(effectifs$groupe %in% c("LFI-NFP", "GDR", "SOC", "EcoS", "EPR", "Dem", "HOR", "LIOT", "NI", "DR", "UDR", "RN"))) graphique_hemicycle(effectifs, titre = NULL) else NULL
   modele = system.file("modeles", "fiche_deputes.Rmd", package = "parlementR")
   if (!nzchar(modele)) stop("Modele PDF introuvable dans le package.")
   dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
@@ -156,7 +160,7 @@ fiche_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = N
     input = modele,
     output_file = basename(fichier),
     output_dir = cible,
-    params = list(tableaux = tableaux, synthese = synthese, total = nrow(deputes),
+    params = list(tableaux = tableaux, synthese = synthese, hemicycle = hemicycle, total = nrow(deputes),
       metadonnees = metadonnees, source_url = source$url,
       titre = .echapper_latex_senateurs("Assembl\u00e9e nationale - D\u00e9put\u00e9s"),
       sous_titre = .echapper_latex_senateurs(paste0(nrow(deputes), " d\u00e9put\u00e9s - \u00c9dition du ", format(Sys.Date(), "%d/%m/%Y"))),

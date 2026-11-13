@@ -1,0 +1,26 @@
+test_that("Les fonctions publiques sont presentes", {
+  expect_true(is.function(parlementR::actualiser))
+  expect_true(is.function(parlementR::importer_questions_an))
+  expect_true(is.function(parlementR::importer_questions_senat))
+})
+
+test_that("Les archives locales ne degradent pas une base existante", {
+  con = DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  DBI::dbExecute(con, "CREATE SCHEMA suivi")
+  DBI::dbExecute(con, "CREATE TABLE suivi.actualisations (jeu VARCHAR, md5 VARCHAR)")
+  DBI::dbExecute(con, "CREATE SCHEMA an_votes")
+  DBI::dbExecute(con, "CREATE TABLE an_votes.scrutins (uid VARCHAR)")
+  expect_true(parlementR:::.jeu_present(con, "scrutins", "an_votes.scrutins"))
+  zip = tempfile(fileext = ".zip")
+  d = tempfile(); dir.create(d)
+  writeLines("x", file.path(d, "x.txt"))
+  old = setwd(d); on.exit(setwd(old), add = TRUE)
+  utils::zip(zip, "x.txt", flags = "-q")
+  expect_error(parlementR:::.controle_archive_locale(con, "scrutins", zip, TRUE), "remplacement refuse")
+  DBI::dbExecute(con, "INSERT INTO suivi.actualisations VALUES (?, ?)",
+    params = list("scrutins", parlementR:::.empreinte_archive(zip)))
+  expect_identical(parlementR:::.controle_archive_locale(con, "scrutins", zip, TRUE), "identique")
+  expect_identical(parlementR:::.controle_archive_locale(con, "scrutins", zip, TRUE, TRUE), "identique")
+  expect_false(parlementR:::.jeu_present(con, "questions_senat", "sen_questions"))
+})

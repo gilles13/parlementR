@@ -11,10 +11,10 @@
   stopifnot(is.character(titre), length(titre) == 1L, !is.na(titre))
   if (!is.null(sous_titre)) stopifnot(is.character(sous_titre), length(sous_titre) == 1L)
   if (isTRUE(logo)) {
-    chemin = system.file("assets", "logo_hexa.png", package = "parlementR")
+    chemin = system.file("assets", "logo_hexa_small.png", package = "parlementR")
     # En developpement, load_all() fournit normalement le chemin inst/.
     if (!nzchar(chemin)) {
-      chemin = file.path("inst", "assets", "logo_hexa.png")
+      chemin = file.path("inst", "assets", "logo_hexa_small.png")
     }
     if (file.exists(chemin)) {
       image = png::readPNG(chemin)

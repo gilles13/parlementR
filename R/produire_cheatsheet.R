@@ -14,8 +14,13 @@ produire_cheatsheet = function(sortie = "/tmp/parlementR-cheatsheet.pdf", ouvrir
   }
   modele = system.file("modeles", "cheatsheet.html", package = "parlementR")
   logo = system.file("assets", "logo_hexa.png", package = "parlementR")
+  fig01 = system.file("assets", "fig01_small.png", package = "parlementR")
+  fig02 = system.file("assets", "fig02_small.png", package = "parlementR")
   if (!nzchar(modele) || !nzchar(logo)) {
     stop("Modele ou logo parlementR introuvable.", call. = FALSE)
+  }
+  if (!nzchar(fig01) || !nzchar(fig02)) {
+    stop("Illustrations manquantes dans inst/assets : fig01_small.png et/ou fig02_small.png.", call. = FALSE)
   }
   sortie = normalizePath(sortie, mustWork = FALSE)
   dir.create(dirname(sortie), recursive = TRUE, showWarnings = FALSE)
@@ -23,6 +28,8 @@ produire_cheatsheet = function(sortie = "/tmp/parlementR-cheatsheet.pdf", ouvrir
   on.exit(unlink(html), add = TRUE)
   contenu = paste(readLines(modele, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   contenu = sub("{{HEXA}}", paste0("file://", normalizePath(logo)), contenu, fixed = TRUE)
+  contenu = gsub("{{FIG01}}", paste0("file://", normalizePath(fig01)), contenu, fixed = TRUE)
+  contenu = gsub("{{FIG02}}", paste0("file://", normalizePath(fig02)), contenu, fixed = TRUE)
   writeLines(contenu, html, useBytes = TRUE)
   args = c("--headless", "--disable-gpu", "--no-sandbox",
            "--allow-file-access-from-files", "--no-pdf-header-footer",

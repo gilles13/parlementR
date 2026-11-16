@@ -1,0 +1,121 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r list()
+---
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r outils, include=FALSE}
+valeur = function(x) {
+  x = as.character(x)
+  x[is.na(x)] = ""
+  x
+}
+tableau = function(d) {
+  if (is.null(d) || !nrow(d)) return("Aucune information renseignée.\n\n")
+  d[] = lapply(d, valeur)
+  paste0(knitr::kable(d, format = "latex", booktabs = TRUE,
+                      longtable = TRUE, escape = TRUE, row.names = FALSE), "\n\n")
+}
+```
+
+```{r surlignage, include=FALSE}
+mettre_en_gras = function(x, terme, actif) {
+  x = valeur(x)[1]
+  if (!isTRUE(actif) || length(terme) != 1L || is.na(terme) || !nzchar(terme)) return(x)
+  pos = gregexpr(tolower(terme), tolower(x), fixed = TRUE)[[1L]]
+  if (pos[1L] == -1L) return(x)
+  tailles = attr(pos, "match.length")
+  morceaux = character()
+  debut = 1L
+  for (j in seq_along(pos)) {
+    if (pos[j] > debut) morceaux = c(morceaux, substr(x, debut, pos[j] - 1L))
+    morceaux = c(morceaux, paste0("**", substr(x, pos[j], pos[j] + tailles[j] - 1L), "**"))
+    debut = pos[j] + tailles[j]
+  }
+  if (debut <= nchar(x)) morceaux = c(morceaux, substr(x, debut, nchar(x)))
+  paste(morceaux, collapse = "")
+}
+```
+
+```{r contenu, echo=FALSE, results='asis'}
+d = params$donnees
+cat("**Expression recherchée :** ", d$sujet, "\n\n", sep = "")
+if (identical(d$type, "documents")) {
+  if (!is.null(d$sources) && nrow(d$sources)) {
+    cat("# Sources et traçabilité\n\n")
+    cat(tableau(d$sources[d$sources$source %in% unique(d$lignes$source), , drop = FALSE]))
+  }
+  if (length(d$absentes)) cat("**Sources non importées :** ", paste(d$absentes, collapse = ", "), "\n\n")
+  if (!nrow(d$lignes)) cat("Aucun document trouvé dans les sources interrogées.\n\n")
+  for (i in seq_len(nrow(d$lignes))) {
+    x = d$lignes[i, , drop = FALSE]
+    cat("# Document ", i, "\n\n", sep = "")
+    cols = intersect(c("source", "type_document", "identifiant", "titre", "date", "dossier_id", "url"), names(x))
+    for (col in cols) if (nzchar(valeur(x[[col]])[1]))
+      cat("**", col, " :** ", valeur(x[[col]])[1], "\n\n", sep = "")
+    if ("contenu" %in% names(x) && nzchar(valeur(x$contenu)[1])) {
+      cat("## Contenu officiel\n\n")
+      cat(mettre_en_gras(x$contenu, d$sujet, d$surligner), "\n\n")
+    }
+  }
+} else {
+  textes = d$textes
+  lectures = d$lectures
+  amendements = d$amendements
+  if (!nrow(textes)) cat("Aucun texte correspondant dans les données locales.\n\n")
+  for (i in seq_len(nrow(textes))) {
+    x = textes[i, , drop = FALSE]
+    cat("# Texte législatif\n\n")
+    cols = intersect(c("intitule", "titre_complet", "numero_texte", "texte_id",
+                       "date_depot", "signet", "dossier_id", "url_an"), names(x))
+    for (col in cols) if (nzchar(valeur(x[[col]])[1]))
+      cat("**", col, " :** ", valeur(x[[col]])[1], "\n\n", sep = "")
+    if (nrow(lectures) && "dossier_id" %in% names(x)) {
+      l = lectures[!is.na(lectures$dossier_id) &
+        lectures$dossier_id == x$dossier_id[[1]], , drop = FALSE]
+      if (nrow(l)) {
+        cat("## Lectures documentées\n\n")
+        cat(tableau(l[, intersect(c("commentaire", "lecture_id"), names(l)), drop = FALSE]))
+      }
+    }
+    if (nrow(amendements)) {
+      a = amendements[!is.na(amendements$texte_id) &
+        amendements$texte_id == x$texte_id[[1]], , drop = FALSE]
+      for (j in seq_len(nrow(a))) {
+        y = a[j, , drop = FALSE]
+        cat("## Amendement n° ", valeur(y$numero)[1], "\n\n", sep = "")
+        for (col in intersect(c("amendement_id", "auteurs", "date_depot", "sort"), names(y)))
+          cat("**", col, " :** ", valeur(y[[col]])[1], "\n\n", sep = "")
+        for (col in intersect(c("objet", "dispositif"), names(y)))
+          cat("### ", col, "\n\n", valeur(y[[col]])[1], "\n\n", sep = "")
+      }
+    }
+  }
+}
+```

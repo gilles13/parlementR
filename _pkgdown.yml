@@ -33,19 +33,19 @@ reference:
   - actualiser
 - title: Analyses et rapports
   contents:
-  - fiche_deputes
+  - cat_deputes
   - fiche_depute
-  - produire_fiche_depute
+  - rapport_depute
   - produire_cheatsheet
-  - rapport_legislatif
+  - rapport_legislatif_an
 
 - title: Sénateurs
   contents:
   - importer_senateurs
   - senateurs_synthese
-  - produire_senateurs
+  - cat_senateurs
   - fiche_senateur
-  - produire_fiche_senateur
+  - rapport_senateur
 
 - title: Importation des données législatives
   contents:
@@ -54,16 +54,21 @@ reference:
 
 - title: Recherche et documentation des dossiers
   contents:
-  - rechercher_dossiers
-  - produire_sujets
-  - produire_dossier
+  - rech_dosleg_an
+  - cat_dosleg_an
+  - rapport_dosleg_an
 
 - title: Questions du Sénat
   contents:
-  - importer_questions
-  - lister_themes
-  - rechercher_questions
-  - consulter_question
-  - produire_questions
-  - produire_question
+  - importer_questions_senat
+  - rech_themes_senat
+  - rech_quest_senat
+  - fiche_quest_senat
+  - cat_quest_senat
+  - rapport_quest_senat
   - shiny_senat_question
+
+- title: Autres fonctions
+  desc: Fonctions complémentaires du package.
+  contents:
+  - starts_with("")

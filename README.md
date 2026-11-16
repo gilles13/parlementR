@@ -19,7 +19,7 @@ library(parlementR)
 
 db = connexion(creer = TRUE)
 actualiser(db = db, jeux = "deputes")
-fiche_deputes(db = db, fichier = "/tmp/parlementR-deputes.pdf")
+cat_deputes(db = db, fichier = "/tmp/parlementR-deputes.pdf")
 fermer_base()
 ```
 
@@ -49,7 +49,7 @@ L’import initial de certains jeux peut prendre plusieurs minutes. Pour les dé
 ```r
 # Après importation des jeux correspondants :
 actualiser(db = db, jeux = "amendements")
-rapport_legislatif(db, "logement", pdf = FALSE)
+rapport_legislatif_an(db, "logement", pdf = FALSE)
 
 # Exploitation des débats déjà importés :
 DBI::dbGetQuery(db, "SELECT count(*) AS seances FROM an_debats.debats_seances")
@@ -84,3 +84,48 @@ DBI::dbDisconnect(db, shutdown = TRUE)
 `connexion()` charge ensuite l’extension installée avec `LOAD icu`, sans téléchargement.
 
 Site du projet : <https://gilles13.github.io/parlementR/>
+
+## API de recherche et de production
+
+```r
+a = rech_amdt_an(sujet = "logement")
+attr(a, "sujet")
+rapport_amdt_an(a)
+rapport_amdt_an(a, pdf = FALSE)
+
+docs = rech_docs("logement")
+attr(docs, "sujet")
+rapport_docs(docs)
+rapport_docs(docs, pdf = FALSE)
+
+s = rech_amdt_senat("logement")
+rapport_amdt_senat(s)
+rapport_amdt_senat(s, pdf = FALSE)
+```
+
+Les fonctions de recherche conservent le sujet dans l'attribut `sujet`.
+Les rapports reprennent ce sujet automatiquement lorsque leur titre en depend.
+
+
+### Découvrir les parlementaires
+
+```r
+# Après actualiser(jeux = c("deputes", "senateurs"))
+rechercher_parlementaires("Dupont")
+# Interface facultative : install.packages("shiny")
+shiny::runApp(explorer())
+```
+
+L'application utilise uniquement les données déjà présentes dans DuckDB.
+
+## Codes LEGI : articles et sommaires
+
+Les PDF utilisent le logo parlementR et indiquent en pied de page la source officielle cliquable, la date d'import et le MD5 de l'archive, lorsque le suivi local les renseigne. La date d'import n'est pas la date de consolidation juridique.
+
+```r
+produire_code(code = "penal", article = "121-3")
+produire_code(code = "civil", article = "1240")
+sommaire_code(code = "penal", niveau = 3)
+```
+
+Les noms de codes sont normalises sans accents. Les PDF sont produits a partir de DuckDB, sans requete reseau.

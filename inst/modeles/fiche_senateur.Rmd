@@ -1,0 +1,57 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r list()
+---
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r outils, include=FALSE}
+valeur = function(x) {
+  x = as.character(x)
+  x[is.na(x)] = ""
+  x
+}
+tableau = function(d) {
+  if (is.null(d) || !nrow(d)) return("Aucune information renseignée.\n\n")
+  d[] = lapply(d, valeur)
+  paste0(knitr::kable(d, format = "latex", booktabs = TRUE,
+                      longtable = TRUE, escape = TRUE, row.names = FALSE), "\n\n")
+}
+```
+
+```{r contenu, echo=FALSE, results='asis'}
+for (nom in names(params$donnees)) {
+  cat("# ", nom, "\n\n", sep = "")
+  lignes = valeur(params$donnees[[nom]])
+  if (!length(lignes)) lignes = "Aucune information renseignée."
+  for (ligne in lignes) cat("- ", ligne, "\n", sep = "")
+  if (identical(nom, "Appartenances politiques"))
+    cat("\n*Les codes de groupe sont historiques ; les libellés actuels ne sont pas substitués.*\n")
+  cat("\n")
+}
+```

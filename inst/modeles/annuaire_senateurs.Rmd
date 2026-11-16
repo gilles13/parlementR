@@ -1,0 +1,67 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r list()
+---
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r outils, include=FALSE}
+valeur = function(x) {
+  x = as.character(x)
+  x[is.na(x)] = ""
+  x
+}
+tableau = function(d, largeurs) {
+  if (is.null(d) || !nrow(d)) return("Aucune information renseignée.\n\n")
+  d[] = lapply(d, valeur)
+  rendu = as.character(knitr::kable(d, format = "latex", booktabs = TRUE,
+                                    longtable = TRUE, escape = TRUE, row.names = FALSE))
+  # Les colonnes p{} imposent la largeur et permettent les retours a la ligne.
+  # Les largeurs incluent une marge pour les espacements intercolonnes.
+  motif = paste0("{", paste(rep("l", ncol(d)), collapse = ""), "}")
+  specification = paste0("{", paste0("p{", largeurs, "cm}", collapse = ""), "}")
+  rendu = sub(motif, specification, rendu, fixed = TRUE)
+  paste0(rendu, "\n\n")
+}
+```
+
+```{r contenu, echo=FALSE, results='asis'}
+d = params$donnees
+cat("# Répartition par groupe ou formation\n\n")
+cat(tableau(d$recap, c(11.4, 1.5, 1.5)))
+if (identical(d$type, "actif"))
+  cat("*Le ou la présidente de chaque groupe figure en tête de son groupe.*\n\n")
+cat("# Annuaire\n\n")
+for (g in unique(d$donnees$groupe)) {
+  x = d$donnees[d$donnees$groupe == g, , drop = FALSE]
+  cat("## ", g, " (", nrow(x), ")\n\n", sep = "")
+  cat(tableau(data.frame(ID = x$id, `Nom et prénom` = x$senateur,
+    Profession = x$profession, Circonscription = x$circonscription,
+    check.names = FALSE), c(1.3, 4.5, 5.5, 3.7)))
+}
+```

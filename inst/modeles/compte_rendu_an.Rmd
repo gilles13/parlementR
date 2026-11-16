@@ -1,0 +1,47 @@
+---
+title: "Compte rendu de commission"
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,margin=2cm"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \setmainfont{DejaVu Serif}
+params:
+  cr: !r list()
+  mots: !r data.frame()
+  n: 100
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+esc = parlementR:::.echapper_latex_senateurs
+```
+
+```{r metadonnees, results='asis'}
+cr = params$cr
+cat("\\textbf{Commission / intitulé :} ", esc(cr$titre), "\\par\n", sep = "")
+cat("\\textbf{Référence d'organe :} ", esc(cr$commission_ref), "\\par\n", sep = "")
+cat("\\textbf{Date :} ", if (is.na(cr$date)) "Non renseignée" else format(cr$date, "%d/%m/%Y"), "\\par\n", sep = "")
+cat("\\textbf{Sujet :} ", esc(cr$sujet), "\\par\n", sep = "")
+cat("\\textbf{Intervenants mentionnés dans le texte (repérage automatique, non exhaustif) :} ", esc(paste(cr$intervenants_mentions, collapse = ", ")), "\\par\n", sep = "")
+cat("\\textbf{Source :} ", esc(cr$url), "\\par\n", sep = "")
+```
+
+## Nuage de mots
+
+```{r nuage, fig.width=9, fig.height=5.5, out.width='100%'}
+parlementR::nuage_compte_rendu_an(params$mots, n = params$n)
+```
+
+\newpage
+
+# Compte rendu intégral
+
+```{r texte, results='asis'}
+paragraphes = strsplit(cr$texte, "\n", fixed = TRUE)[[1]]
+paragraphes = trimws(paragraphes)
+paragraphes = paragraphes[nzchar(paragraphes)]
+for (p in paragraphes) cat(esc(p), "\\par\n", sep = "")
+```

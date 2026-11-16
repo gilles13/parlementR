@@ -1,0 +1,87 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r NULL
+---
+
+```{r setup, include=FALSE}
+valeur = function(x, defaut = "Non renseigne") {
+  if (!length(x) || is.na(x[[1]]) || !nzchar(trimws(as.character(x[[1]]))))
+    return(defaut)
+  as.character(x[[1]])
+}
+texte = function(x) {
+  x = valeur(x, "")
+  x = gsub("\r\n?", "\n", x)
+  x = gsub("\\\\par\\b", "\n", x, perl = TRUE)
+  if (grepl("<[^>]+>|&[A-Za-z#0-9]+;", x)) {
+    x = gsub("(?i)<br\\s*/?>|</(p|div|li)>", "\n", x, perl = TRUE)
+    x = tryCatch(xml2::xml_text(xml2::read_html(paste0("<div>", x, "</div>"))),
+                 error = function(e) gsub("<[^>]+>", "", x))
+  }
+  lignes = strsplit(x, "\n", fixed = TRUE)[[1]]
+  lignes = trimws(lignes)
+  lignes = lignes[nzchar(lignes)]
+  for (symbole in c("\\", "`", "*", "_", "{", "}", "[", "]", "<", ">", "#", "!", "|"))
+    lignes = gsub(symbole, paste0("\\", symbole), lignes, fixed = TRUE)
+  paste(lignes, collapse = "\n\n")
+}
+``` 
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r amendements, echo=FALSE, results='asis'}
+d = params$donnees
+x = d[!duplicated(d$uid), , drop = FALSE]
+cat("**Recherche :** ", texte(params$sous_titre), "\n\n",
+    "**Selection :** ", nrow(x), " amendement(s)\n\n",
+    "**Edition :** ", format(Sys.Date(), "%d/%m/%Y"), "\n\n", sep = "")
+comptes = function(v) {
+  v = as.character(v)
+  v[is.na(v) | !nzchar(trimws(v))] = "Non renseigne"
+  t = sort(table(v), decreasing = TRUE)
+  data.frame(Categorie = names(t), Nombre = as.integer(t))
+}
+for (champ in c("etat", "sort", "groupe")) {
+  cat("## ", c(etat = "Etats de traitement", sort = "Sorts", groupe = "Groupes politiques")[[champ]], "\n\n", sep = "")
+  print(knitr::kable(comptes(x[[champ]]), format = "pipe", row.names = FALSE))
+  cat("\n\n")
+}
+cat("## Amendements\n\n")
+if (!nrow(x)) cat("Aucun amendement dans la selection.\n")
+for (i in seq_len(nrow(x))) {
+  a = x[i, , drop = FALSE]
+  cat("### Amendement ", texte(a$numero), "\n\n",
+      "**Date :** ", texte(a$date_depot), "  \n",
+      "**Auteur :** ", texte(a$auteur), " (", texte(a$groupe), ")  \n",
+      "**Etat :** ", texte(a$etat), " ; **Sort :** ", texte(a$sort), "  \n",
+      "**Texte :** ", texte(a$texte), " ; **Article :** ", texte(a$article), "  \n",
+      "**UID :** ", texte(a$uid), "\n\n",
+      "**Dispositif :**\n\n", texte(a$dispositif), "\n\n",
+      "**Expose sommaire :**\n\n", texte(a$expose), "\n\n", sep = "")
+}
+```

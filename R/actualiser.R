@@ -1,7 +1,7 @@
 #' Actualiser les donnees parlementaires
 #'
 #' @param db Connexion DBI facultative ; NULL initialise la base au besoin.
-#' @param jeux Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli".
+#' @param jeux Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli", "rne", "legi".
 #' @param cache Repertoire de cache persistant.
 #' @param archive Chemin facultatif vers une archive ZIP locale (un seul jeu).
 #' @param forcer Ignorer le delai de 24 heures et verifier le serveur ; ne force pas l'import si l'archive est inchangee.
@@ -12,7 +12,7 @@ actualiser = function(db = NULL, jeux = "deputes",
                       cache = tools::R_user_dir("parlementR", "cache"),
                       archive = NULL, verbose = TRUE, forcer = FALSE,
                       autoriser_regression = FALSE) {
-  disponibles = c("deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli")
+  disponibles = c("deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli", "rne", "legi")
   if (!length(jeux) || anyNA(jeux) || any(!jeux %in% disponibles) ||
       anyDuplicated(jeux))
     stop("Jeux attendus, sans doublon : ", paste(disponibles, collapse = ", "))
@@ -54,12 +54,38 @@ actualiser = function(db = NULL, jeux = "deputes",
     dosleg = "sen_dosleg",
     questions_senat = "sen_questions",
     ameli = "sen_amendements",
-    questions_an = "an_questions.questions"
+    questions_an = "an_questions.questions",
+    rne = c("rne.deputes", "rne.senateurs")
   )
   for (jeu in jeux) {
     journal = function(...) if (isTRUE(verbose)) message(
       "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [", toupper(jeu), "] ", ...)
     journal("Debut de l'actualisation")
+    if (jeu == "legi") {
+      if (is.null(archive)) stop("LEGI : fournir l'archive globale locale avec archive = ...")
+      presentes_legi = .jeu_present(db, "legi", c("legi.textes", "legi.liens_racine", "legi.sections", "legi.articles", "legi.liens", "legi.articles_contenu"))
+      etat_legi = .controle_archive_legi(db, archive, presentes_legi,
+                                         autoriser_regression)
+      if (identical(etat_legi, "identique")) {
+        journal("Archive locale identique : aucun import")
+        next
+      }
+      importer_legi(archive = archive, db = db, verbose = verbose)
+      DBI::dbExecute(db, paste0(
+        "INSERT INTO suivi.actualisations (jeu, date_import, date_controle, md5) ",
+        "VALUES ('legi', current_timestamp, current_timestamp, ?) ",
+        "ON CONFLICT (jeu) DO UPDATE SET date_import = excluded.date_import, ",
+        "date_controle = excluded.date_controle, md5 = excluded.md5"),
+        params = list(.empreinte_archive(archive)))
+      journal("Codes, hierarchie et contenus XML importes")
+      next
+    }
+    if (jeu == "rne") {
+      if (!is.null(archive)) stop("Pour RNE, utiliser le cache local, pas 'archive'.")
+      .actualiser_rne(db = db, cache = cache, forcer = forcer,
+                     verbose = verbose, autoriser_regression = autoriser_regression)
+      next
+    }
     if (jeu == "questions_an") {
       .actualiser_questions_an(db = db, cache = cache, archive = archive,
                               forcer = forcer, verbose = verbose,

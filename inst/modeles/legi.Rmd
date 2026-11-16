@@ -1,0 +1,56 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=2.5cm,bottom=2.2cm"
+fontsize: 16pt
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  contenu: !r data.frame()
+  metadata: !r list()
+---
+
+```{r preparation, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+echapper = function(x) {
+  x = as.character(x)
+  x[is.na(x)] = ""
+  table = c("\\" = "\\textbackslash{}", "{" = "\\{", "}" = "\\}",
+    "#" = "\\#", "$" = "\\$", "%" = "\\%", "&" = "\\&",
+    "_" = "\\_", "^" = "\\textasciicircum{}", "~" = "\\textasciitilde{}")
+  vapply(x, function(v) {
+    lettres = strsplit(v, "", fixed = TRUE)[[1L]]
+    paste0(vapply(lettres, function(ch) if (ch %in% names(table)) table[[ch]] else ch,
+      character(1)), collapse = "")
+  }, character(1), USE.NAMES = FALSE)
+}
+```
+
+```{r document, results='asis'}
+cat("\\noindent\\begin{minipage}[c]{0.78\\textwidth}\\Large\\bfseries ",
+    echapper(params$titre), "\\\\[2pt]\\normalsize\\mdseries ",
+    echapper(params$sous_titre), "\\end{minipage}", sep = "")
+cat("\\hfill\\includegraphics[height=0.78cm]{\\detokenize{", params$logo,
+    "}}\\par\\vspace{0.4cm}\\hrule\\vspace{0.6cm}\n", sep = "")
+cat("\\noindent\\footnotesize Source : LEGI / Légifrance | Extraction : ",
+    echapper(params$metadata$extraction), " | MD5 : ",
+    echapper(params$metadata$md5), "\\par\n", sep = "")
+cat("\\noindent\\footnotesize\\url{", params$metadata$url,
+    "}\\par\\normalsize\\vspace{0.5cm}\n", sep = "")
+for (i in seq_len(nrow(params$contenu))) {
+  profondeur = as.integer(params$contenu$profondeur[[i]])
+  if (is.na(profondeur) || profondeur < 0L) stop("Profondeur LEGI invalide")
+  gras = "gras" %in% names(params$contenu) && isTRUE(params$contenu$gras[[i]])
+  texte = echapper(params$contenu$texte[[i]])
+  if (!nzchar(trimws(texte))) next
+  retrait = min(profondeur, 10L) * 0.45
+  cat("\\noindent\\hspace*{", format(retrait, decimal.mark = ".", scientific = FALSE),
+      "cm}\\begin{minipage}[t]{\\dimexpr\\linewidth-",
+      format(retrait, decimal.mark = ".", scientific = FALSE), "cm\\relax}", sep = "")
+  if (gras) cat("\\bfseries ")
+  cat(texte, "\\end{minipage}\\par\\vspace{0.12cm}\n", sep = "")
+}
+```

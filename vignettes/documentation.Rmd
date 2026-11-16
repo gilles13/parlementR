@@ -95,10 +95,10 @@ actualiser(jeux = "questions", archive = "~/Downloads/questions.zip")
 # Mise à jour depuis la source officielle :
 actualiser(jeux = "questions")
 # Recherches entièrement locales :
-rechercher_questions("logement")
+rech_quest_senat("logement")
 ```
 
-La mise à jour utilise le cache et les contrôles HTTP conditionnels d'`actualiser()`. Les recherches ne déclenchent aucun accès réseau. Une question sans réponse reste consultable. Les fonctions `produire_questions()` et `produire_question()` génèrent respectivement un catalogue et une fiche PDF.
+La mise à jour utilise le cache et les contrôles HTTP conditionnels d'`actualiser()`. Les recherches ne déclenchent aucun accès réseau. Une question sans réponse reste consultable. Les fonctions `cat_quest_senat()` et `rapport_quest_senat()` génèrent respectivement un catalogue et une fiche PDF.
 
 **Contrôle d'importation effectué le 11 novembre 2026** sur l'archive transmise : 294 323 lignes dans `tam_questions` et 235 887 dans `tam_reponses`. Ces effectifs décrivent cette version de l'archive, pas une constante à imposer aux mises à jour.
 
@@ -124,15 +124,15 @@ codes sources et documente cette incertitude plutôt que de créer une
 nomenclature parallèle.
 
 ```r
-lister_themes(db = db)
-rechercher_questions(theme = "Logement et urbanisme", db = db)
-rechercher_questions("rénovation", theme = "Logement et urbanisme", db = db)
-produire_questions(theme = "Logement et urbanisme", limite = 30, db = db)
+rech_themes_senat(db = db)
+rech_quest_senat(theme = "Logement et urbanisme", db = db)
+rech_quest_senat("rénovation", theme = "Logement et urbanisme", db = db)
+cat_quest_senat(theme = "Logement et urbanisme", limite = 30, db = db)
 ```
 
 Le comptage par thème est **non exclusif** : une question classée dans deux
 thèmes contribue aux deux effectifs. La recherche reste entièrement locale.
-`rechercher_questions()` conserve son filtre sur les questions écrites (`QE`).
+`rech_quest_senat()` conserve son filtre sur les questions écrites (`QE`).
 
 ### Disponibilité historique des textes
 

@@ -17,7 +17,7 @@ actualiser(
 \arguments{
 \item{db}{Connexion DBI facultative ; NULL initialise la base au besoin.}
 
-\item{jeux}{Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli".}
+\item{jeux}{Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli", "rne", "legi".}
 
 \item{cache}{Repertoire de cache persistant.}
 

@@ -20,7 +20,7 @@ shiny_senat_question = function(db = NULL) {
     call. = FALSE)
   db = .connexion_valide(db)
   DBI::dbExecute(db, "SET enable_progress_bar = false")
-  themes = lister_themes(db = db)
+  themes = rech_themes_senat(db = db)
   choix = c("Choisir un th\u00e8me" = "", stats::setNames(
     themes$theme, paste0(themes$theme, " (", themes$questions, ")")))
   afficher_texte = function(x) {
@@ -45,7 +45,7 @@ shiny_senat_question = function(db = NULL) {
     resultats = shiny::eventReactive(input$chercher, {
       sujet = trimws(input$texte)
       shiny::req(nzchar(sujet) || nzchar(input$theme))
-      rechercher_questions(
+      rech_quest_senat(
         sujet = if (nzchar(sujet)) sujet else NULL,
         theme = if (nzchar(input$theme)) input$theme else NULL,
         limite = input$limite, db = db)
@@ -65,7 +65,7 @@ shiny_senat_question = function(db = NULL) {
       shiny::req(length(i) == 1L)
       x = resultats()
       shiny::req(i >= 1L, i <= nrow(x))
-      consulter_question(x$id[[i]], db = db)
+      fiche_quest_senat(x$id[[i]], db = db)
     })
     output$detail = shiny::renderUI({
       q = question()

@@ -1,0 +1,84 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r NULL
+---
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r contenu, echo=FALSE, results='asis'}
+x = params$donnees
+g = x$gouvernement[1, ]
+m = x$membres
+fmt = function(v) ifelse(is.na(v), "En cours", format(v, "%d/%m/%Y"))
+cat("## Présentation\n\n",
+    "**Gouvernement :** ", g$gouvernement, "  \n",
+    "**Premier ministre :** ", g$premier_ministre, "  \n",
+    "**Début :** ", fmt(g$debut), "  \n",
+    "**Fin :** ", fmt(g$fin), "  \n",
+    "**Personnes distinctes sur la période :** ", g$effectif, "\n\n", sep = "")
+if (!is.null(x$date)) {
+  cat("**Date de la composition :** ", fmt(as.Date(x$date)), "  \n",
+      "**Membres à cette date :** ", length(unique(m$acteur_uid)), "\n\n", sep = "")
+} else {
+  cat("**Mandats recensés :** ", nrow(m), "\n\n", sep = "")
+}
+cat("## Composition\n\n")
+if (anyNA(m$preseance)) {
+  cat("*Classement par préséance ministérielle lorsqu’elle est disponible ; sinon par qualité et nom (ordre non protocolaire).*\n\n")
+}
+cat("*PM : Premier ministre ; M : ministre ; MD : ministre délégué ; GDS : garde des sceaux.*\n\n")
+if (nrow(m)) {
+  qualite = ifelse(m$fonction == "Premier ministre", "PM",
+             ifelse(grepl("Garde des sceaux", m$fonction, ignore.case = TRUE), "GDS",
+             ifelse(grepl("Ministre délégué", m$fonction, ignore.case = TRUE), "MD",
+             ifelse(grepl("Ministre", m$fonction, ignore.case = TRUE), "M", m$fonction))))
+  d = data.frame(
+    `Membre` = paste(m$prenom, m$nom),
+    `Qualité` = qualite,
+    `Portefeuille` = m$portefeuille_abrege,
+    check.names = FALSE)
+  if (is.null(x$date)) {
+    d$`Début` = ifelse(is.na(m$debut), "", format(m$debut, "%d/%m/%y"))
+    d$`Fin` = ifelse(is.na(m$fin), "En cours", format(m$fin, "%d/%m/%y"))
+  }
+  d[is.na(d)] = ""
+  # Une ligne par mandat ; dates compactes dans le tableau historique.
+  tableau = paste(knitr::kable(d, format = "latex", booktabs = TRUE,
+                               longtable = TRUE, escape = TRUE, row.names = FALSE,
+                               align = "l", linesep = ""), collapse = "\n")
+  # Colonnes p{} : retour a la ligne automatique dans les portefeuilles.
+  largeur = if (is.null(x$date))
+    "{p{3.65cm}p{0.7cm}p{7.4cm}p{1.45cm}p{1.45cm}}" else
+    "{p{4.1cm}p{0.75cm}p{10.7cm}}"
+  tableau = sub("(\\\\begin\\{longtable\\}(\\[[^]]*\\])?)\\{[^}]*\\}",
+                paste0("\\1", largeur), tableau)
+  cat("\\begingroup\\footnotesize\\setlength{\\tabcolsep}{2pt}\n")
+  cat(tableau, "\n")
+  cat("\\endgroup\n")
+} else cat("Aucun mandat recensé à cette date.\n")
+```

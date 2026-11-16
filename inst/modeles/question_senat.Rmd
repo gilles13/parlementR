@@ -1,0 +1,70 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r NULL
+---
+
+```{r setup, include=FALSE}
+valeur = function(x, defaut = "Non renseigne") {
+  if (!length(x) || is.na(x[[1]]) || !nzchar(trimws(as.character(x[[1]]))))
+    return(defaut)
+  as.character(x[[1]])
+}
+# Les textes officiels sont du texte brut, pas du code Markdown/LaTeX.
+# Echappement des caracteres interpretes par Pandoc et des antislashs.
+texte = function(x) {
+  x = valeur(x, "Texte non disponible dans la source officielle")
+  x = gsub("\r\n?", "\n", x)
+  x = gsub("\\\\par\\b", "\n", x, perl = TRUE)
+  morceaux = strsplit(x, "\n", fixed = TRUE)[[1]]
+  morceaux = trimws(morceaux)
+  morceaux = morceaux[nzchar(morceaux)]
+  # Echappement Markdown : aucune commande LaTeX de la source n'est executee.
+  for (symbole in c("\\", "`", "*", "_", "{", "}", "[", "]", "<", ">", "#", "!", "|")) {
+    morceaux = gsub(symbole, paste0("\\", symbole), morceaux, fixed = TRUE)
+  }
+  paste(morceaux, collapse = "\n\n")
+}
+```
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r fiche, echo=FALSE, results='asis'}
+q = params$donnees$question[1, ]
+cat("**Reference :** ", valeur(q$reference), "  \n",
+    "**Date :** ", substr(valeur(q$datejodepot), 1, 10), "  \n",
+    "**Senateur :** ", valeur(q$prenom), " ", valeur(q$nom), "\n\n",
+    "## Question\n\n", texte(q$txtque), "\n\n", sep = "")
+reponses = params$donnees$reponses
+if (nrow(reponses)) {
+  for (i in seq_len(nrow(reponses))) {
+    r = reponses[i, ]
+    cat("## Reponse du ", substr(valeur(r$datejorep), 1, 10),
+        "\n\n", texte(r$txtrep), "\n\n", sep = "")
+  }
+} else cat("## Reponse\n\nAucune reponse dans la base locale.\n")
+```

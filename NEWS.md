@@ -1,3 +1,16 @@
+# Interface de découverte (2026-11-15)
+
+- `explorer()` : recherche globale, députés et sénateurs, avec Shiny facultatif.
+- `rechercher_parlementaires()` : recherche locale indépendante de Shiny.
+
+# API harmonisee (2026-11-14)
+
+- Noms publics rationalises : `rech_`, `fiche_`, `cat_`, `rapport_`.
+- `rech_docs()` et `rech_amdt_senat()` ont des producteurs distincts : `rapport_docs()` et `rapport_amdt_senat()`.
+- Les recherches conservent leur sujet dans `attr(resultat, "sujet")` ; les filtres des amendements AN sont aussi conserves.
+- Les rapports documentaires acceptent `pdf = TRUE` par defaut et `pdf = FALSE` pour recuperer les donnees.
+- Les anciens noms publics sont retires, sans alias.
+
 # Documentation AMELI (2026-11-13)
 
 - Documentation de la source officielle AMELI du Sénat, de ses 29 tables DuckDB, de la restauration PostgreSQL temporaire et de l'actualisation hebdomadaire.
@@ -21,7 +34,7 @@
 
 # parlementR 0.0.10 (2026-11-12)
 
-- Integration de `rechercher_amendements()` avec `colonnes = "identification"` pour retrouver les UID officiels.
+- Integration de `rech_amdt_an()` avec `colonnes = "identification"` pour retrouver les UID officiels.
 - Recherche uniquement locale dans DuckDB.
 
 # parlementR 0.0.9 (2026-11-12)
@@ -38,23 +51,23 @@
 
 # parlementR 0.0.7 (2026-11-12)
 
-- `produire_rapport_vote()` retrouve localement l’amendement associé au scrutin en croisant numéro, auteur et titre du document législatif ; exposé et dispositif sont décodés depuis le HTML officiel.
+- `rapport_scrutin_an()` retrouve localement l’amendement associé au scrutin en croisant numéro, auteur et titre du document législatif ; exposé et dispositif sont décodés depuis le HTML officiel.
 - Le résultat `pdf = FALSE` contient désormais `contexte`, avec statut explicite si la correspondance ne peut pas être établie.
 
 # parlementR 0.0.6 (2026-11-12)
 
-- `produire_rapport_vote()` : rapport PDF de scrutin avec résultats, groupes et députés nominatifs, à partir de DuckDB local et du modèle PDF commun.
+- `rapport_scrutin_an()` : rapport PDF de scrutin avec résultats, groupes et députés nominatifs, à partir de DuckDB local et du modèle PDF commun.
 - `pdf = FALSE` permet de vérifier les tableaux avant génération.
 
 # parlementR 0.0.5 (2026-11-12)
 - Décodage des entités HTML dans les extraits d’amendements, correction des accents, de la typographie des dates et UID et des coupures de fiches PDF.
 
 # parlementR 0.0.4 (2026-11-12)
-- Nouvelle fonction `produire_suivi_amendement()` : PDF de synthese des resultats de recherche d’amendements, utilisant le moteur et le modele PDF communs.
+- Nouvelle fonction `rapport_amdt_an()` : PDF de synthese des resultats de recherche d’amendements, utilisant le moteur et le modele PDF communs.
 
 # parlementR 0.0.3 (2026-11-12)
 - Nouvelle fonction exportée `graphique_hemicycle()` : répartition schématique des sièges par groupe, enveloppes convexes transparentes et légende des sigles.
-- Intégration du graphique sur la première page du PDF `fiche_deputes()`, sous le tableau récapitulatif, à partir des effectifs AMO10.
+- Intégration du graphique sur la première page du PDF `cat_deputes()`, sous le tableau récapitulatif, à partir des effectifs AMO10.
 - Dépendances `dplyr` et `ggplot2` déclarées dans `Imports`.
 
 # parlementR 0.0.2 (2026-11-12)

@@ -1,0 +1,137 @@
+---
+title: ""
+output:
+  pdf_document:
+    latex_engine: xelatex
+geometry: "a4paper,left=2.1cm,right=2.1cm,top=3.4cm,bottom=2cm,headheight=45pt,headsep=12pt"
+fontsize: 10pt
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont{DejaVu Serif}
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage[table]{xcolor}
+  - \makeatletter
+  - \def\ps@senateurs{\def\@oddhead{\vbox{\hbox to\textwidth{\begin{minipage}[c]{0.78\textwidth}\small\bfseries\senateurstitre\\\normalfont\footnotesize\senateurssoustitre\end{minipage}\hfill\senateurslogo}\vskip 1pt\hrule}}\let\@evenhead\@oddhead\def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+  - \makeatother
+params:
+  titre: ""
+  sous_titre: ""
+  logo: ""
+  donnees: !r NULL
+---
+
+```{r setup, include=FALSE}
+valeur = function(x, defaut = "Non renseigne") {
+  if (!length(x) || is.na(x[[1]]) || !nzchar(trimws(as.character(x[[1]]))))
+    return(defaut)
+  as.character(x[[1]])
+}
+# Les textes officiels sont du texte brut, pas du code Markdown/LaTeX.
+# Echappement des caracteres interpretes par Pandoc et des antislashs.
+texte = function(x) {
+  x = valeur(x, "Texte non disponible dans la source officielle")
+  x = gsub("\r\n?", "\n", x)
+  x = gsub("\\\\par\\b", "\n", x, perl = TRUE)
+  morceaux = strsplit(x, "\n", fixed = TRUE)[[1]]
+  morceaux = trimws(morceaux)
+  morceaux = morceaux[nzchar(morceaux)]
+  # Echappement Markdown : aucune commande LaTeX de la source n'est executee.
+  for (symbole in c("\\", "`", "*", "_", "{", "}", "[", "]", "<", ">", "#", "!", "|")) {
+    morceaux = gsub(symbole, paste0("\\", symbole), morceaux, fixed = TRUE)
+  }
+  paste(morceaux, collapse = "\n\n")
+}
+```
+
+```{r entete, echo=FALSE, results='asis'}
+cat("\\gdef\\senateurstitre{", params$titre, "}\n", sep = "")
+cat("\\gdef\\senateurssoustitre{", params$sous_titre, "}\n", sep = "")
+cat("\\gdef\\senateurslogo{\\raisebox{-8pt}{\\includegraphics[height=0.78cm]{\\detokenize{",
+    params$logo, "}}}}\n", sep = "")
+cat("\\pagestyle{senateurs}\n")
+```
+
+```{r scrutin, echo=FALSE, results='asis'}
+d = params$donnees
+s = d$scrutin[1, ]
+contexte = d$contexte
+votes = d$votes
+positions = c("Pour", "Contre", "Abstention", "Non-votant", "Non-votant volontaire")
+
+champ = function(nom, valeur_champ) {
+  if (length(valeur_champ) && !is.na(valeur_champ[[1]]) &&
+      nzchar(trimws(as.character(valeur_champ[[1]]))))
+    cat("**", nom, " :** ", texte(valeur_champ), "  \n", sep = "")
+}
+
+# Le texte HTML officiel est transforme en paragraphes ordinaires.
+texte_html = function(x) {
+  if (!length(x) || is.na(x[[1]]) || !nzchar(trimws(x[[1]])))
+    return("Non renseigne.")
+  x = as.character(x[[1]])
+  x = gsub("(?i)<br\\s*/?>|</(p|div|li|h[1-6])>", "\n", x, perl = TRUE)
+  x = tryCatch(xml2::xml_text(xml2::read_html(paste0("<div>", x, "</div>"))),
+               error = function(e) gsub("<[^>]+>", "", x))
+  texte(x)
+}
+
+tableau = function(x) {
+  if (!nrow(x)) {
+    cat("Aucune donnee.\n\n")
+  } else {
+    cat(paste(knitr::kable(x, format = "pipe", row.names = FALSE), collapse = "\n"), "\n\n")
+  }
+}
+
+cat("**Scrutin n° ", texte(s$numero), " — ", texte(s$date), "**  \n",
+    "**Objet officiel :** ", texte(s$titre), "  \n",
+    "**Identifiant :** ", texte(s$uid), "\n\n", sep = "")
+
+if (identical(contexte$statut, "resolu")) {
+  a = contexte$amendement[1, ]
+  cat("## La mesure soumise au vote\n\n")
+  champ("Amendement", a$numero)
+  champ("Auteur", paste(valeur(a$prenom, ""), valeur(a$nom, "")))
+  champ("Projet de loi", a$texte)
+  champ("Emplacement", a$article)
+  champ("Date de depot", a$date_depot)
+  champ("Etat de traitement", a$etat)
+  if (nrow(contexte$cosignataires))
+    champ(paste0("Cosignataires (", nrow(contexte$cosignataires), ")"),
+          paste(contexte$cosignataires$nom, collapse = ", "))
+  cat("\n\n### Dispositif propose\n\n", texte_html(a$dispositif), "\n\n",
+      "### Expose sommaire de l'auteur\n\n", texte_html(a$expose), "\n\n",
+      "### References legislatives\n\n", sep = "")
+  champ("UID amendement", a$uid)
+  champ("UID document", a$texte_ref)
+  champ("Reference de seance de discussion", a$seance_discussion_ref)
+  champ("Reference d'examen", a$examen_ref)
+} else {
+  cat("*Rapprochement non etabli (", texte(contexte$statut),
+      "). Fournir amendement_uid si necessaire.*\n\n", sep = "")
+}
+if (nzchar(valeur(params$donnees$complement, "")))
+  cat("\n\n**Complement :** ", texte(d$complement), "\n\n", sep = "")
+
+pour = sum(votes$position == "Pour")
+contre = sum(votes$position == "Contre")
+abst = sum(votes$position == "Abstention")
+cat("\n\n## Resultat du scrutin\n\n",
+    "**Suffrages exprimes :** ", pour + contre, " (", pour,
+    " pour, ", contre, " contre). ", abst, " abstention(s).\n\n",
+    "Les non-votants nominatifs sont distincts des deputes ne figurant pas dans le decompte nominatif. Les resultats decrivent ce scrutin, pas l'ensemble des membres de chaque groupe.\n\n", sep = "")
+tableau(d$totaux)
+cat("\n\n## Positions nominatives par groupe\n\n")
+tableau(d$groupes)
+cat("\n\n## Participation nominative\n\n")
+for (position in positions) {
+  x = votes[votes$position == position, c("groupe", "depute", "depute_uid"), drop = FALSE]
+  if (!nrow(x)) next
+  names(x) = c("Groupe", "Depute", "Identifiant")
+  cat("\n\n### ", position, " (", nrow(x), ")\n\n", sep = "")
+  tableau(x)
+}
+cat("\n\n*Source : Assemblee nationale, scrutin public et votes nominatifs importes dans la base locale parlementR.*\n")
+```

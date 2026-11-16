@@ -71,7 +71,7 @@ fiche_senateur = function(nom, db = NULL) {
 #' @param db Connexion DuckDB facultative.
 #' @return Chemin du PDF, invisiblement.
 #' @export
-produire_fiche_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
+rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
   con = .connexion_valide(db)
   fiche = fiche_senateur(nom, db = con)
   id = fiche$identite[1, ]
@@ -79,32 +79,21 @@ produire_fiche_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
   if (is.null(sortie))
     sortie = file.path('/tmp', paste0('parlementR-fiche-senateur-', id$senmat, '.pdf'))
 
-  esc = .echapper_latex_senateurs
-  valeur = function(x, vide = 'Non renseign\u00e9') {
+  valeur = function(x, vide = "Non renseign\u00E9") {
     if (!length(x) || is.na(x[1]) || !nzchar(trimws(as.character(x[1])))) return(vide)
     as.character(x[1])
   }
   date = function(x) {
-    if (!length(x) || is.na(x[1])) return('Date non renseign\u00e9e')
-    d = as.Date(x[1], origin = '1970-01-01')
-    if (is.na(d)) return('Date non renseign\u00e9e')
-    format(d, '%d/%m/%Y')
+    if (!length(x) || is.na(x[1])) return("Date non renseign\u00E9e")
+    d = as.Date(x[1], origin = "1970-01-01")
+    if (is.na(d)) return("Date non renseign\u00E9e")
+    format(d, "%d/%m/%Y")
   }
   periode = function(debut, fin) {
-    a = if (is.na(debut)) 'D\u00e9but non renseign\u00e9' else paste0('Du ', date(debut))
-    b = if (is.na(fin)) 'fin non renseign\u00e9e' else paste0('au ', date(fin))
+    a = if (is.na(debut)) "D\u00E9but non renseign\u00E9" else paste0("Du ", date(debut))
+    b = if (is.na(fin)) "fin non renseign\u00E9e" else paste0("au ", date(fin))
     paste(a, b)
   }
-  ligne = function(texte) paste0('\\noindent ', esc(texte), '\\par\n')
-  item = function(texte) paste0('\\item ', esc(texte), '\n')
-  liste = function(x) {
-    if (!length(x)) return('\\emph{Aucune information renseign\u00e9e.}\\par\n')
-    paste0('\\begin{itemize}\\setlength{\\itemsep}{2pt}\n',
-           paste(vapply(x, item, character(1)), collapse = ''),
-           '\\end{itemize}\n')
-  }
-  section = function(titre, contenu) paste0('\\section*{', esc(titre), '}\n', contenu)
-
   # Les nomenclatures sont consultees localement ; un code inconnu reste explicite.
   reference = function(table, cle, code, candidats) {
     if (is.na(code) || !nzchar(as.character(code))) return(NA_character_)
@@ -136,100 +125,82 @@ produire_fiche_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
       return(id$sencircou)
     paste0('D\u00e9partement (code ', code, ')')
   }
-  identite = paste0(
-    ligne(paste('Statut :', switch(valeur(id$etasencod),
-                                 ACTIF = 'En exercice', ANCIEN = 'Ancien s\u00e9nateur',
-                                 valeur(id$etasencod)))),
-    ligne(paste('N\u00e9(e) le', date(id$sendatnai))),
-    if (!is.na(id$sendatdec)) ligne(paste('D\u00e9c\u00e9d\u00e9(e) le', date(id$sendatdec))) else '',
-    ligne(paste('Profession d\u00e9clar\u00e9e :', valeur(id$sendespro))),
-    ligne(paste('Derni\u00e8re circonscription renseign\u00e9e :', valeur(id$sencircou))))
+  identite = c(
+    paste("Statut :", switch(valeur(id$etasencod), ACTIF = "En exercice",
+      ANCIEN = "Ancien s\u00E9nateur", valeur(id$etasencod))),
+    paste("N\u00E9(e) le", date(id$sendatnai)),
+    if (!is.na(id$sendatdec)) paste("D\u00E9c\u00E9d\u00E9(e) le", date(id$sendatdec)),
+    paste("Profession d\u00E9clar\u00E9e :", valeur(id$sendespro)),
+    paste("Derni\u00E8re circonscription renseign\u00E9e :", valeur(id$sencircou)))
 
   m = fiche$mandats
   mandats = if (nrow(m)) vapply(seq_len(nrow(m)), function(i) {
     x = m[i, ]
-    paste0(periode(x$debut, x$fin), ' \u2014 ', territoire(x$departement),
-           ' (\u00e9lection : ', date(x$election), ')')
+    paste0(periode(x$debut, x$fin), " \u2014 ", territoire(x$departement),
+           " (\u00E9lection : ", date(x$election), ")")
   }, character(1)) else character()
-
   g = fiche$groupes_politiques
   groupes = if (nrow(g)) vapply(seq_len(nrow(g)), function(i) {
     x = g[i, ]
-    # Les denominations de grppol sont actuelles et ne sont pas necessairement
-    # celles de la periode concernee : conserver le code historique en premier.
-    paste0(periode(x$debut, x$fin), ' \u2014 Groupe ', valeur(x$code),
-           if (!is.na(x$libelle)) paste0(' (libell\u00e9 actuel : ', x$libelle, ')') else '',
-           if (!is.na(x$type_appartenance)) paste0(' ; appartenance : ',
-             switch(x$type_appartenance, N = 'membre', A = 'apparent\u00e9',
-                    R = 'rattach\u00e9', paste0('code ', x$type_appartenance))) else '')
+    paste0(periode(x$debut, x$fin), " \u2014 Groupe ", valeur(x$code),
+           if (!is.na(x$libelle)) paste0(" (libell\u00E9 actuel : ", x$libelle, ")") else "",
+           if (!is.na(x$type_appartenance)) paste0(" ; appartenance : ",
+             switch(x$type_appartenance, N = "membre", A = "apparent\u00E9",
+                    R = "rattach\u00E9", paste0("code ", x$type_appartenance))) else "")
   }, character(1)) else character()
-
   fg = fiche$fonctions_groupes
   fonctions_groupes = if (nrow(fg)) vapply(seq_len(nrow(fg)), function(i) {
     x = fg[i, ]
-    paste0(valeur(x$fonction, valeur(x$code_fonction)),
-           ' du groupe ', valeur(x$code_groupe),
-           ' \u2014 ', periode(x$debut, x$fin))
+    paste0(valeur(x$fonction, valeur(x$code_fonction)), " du groupe ",
+           valeur(x$code_groupe), " \u2014 ", periode(x$debut, x$fin))
   }, character(1)) else character()
-
   c = fiche$commissions
   commissions = if (nrow(c)) vapply(seq_len(nrow(c)), function(i) {
     x = c[i, ]
     lib = organisme(x$code)
-    if (!is.na(x$code) && x$code == 'NEANT') lib = 'Aucune commission'
-    if (is.na(lib)) lib = paste0('Commission (code ', x$code, ')')
-    paste(periode(x$debut, x$fin), '\u2014', lib)
+    if (!is.na(x$code) && x$code == "NEANT") lib = "Aucune commission"
+    if (is.na(lib)) lib = paste0("Commission (code ", x$code, ")")
+    paste(periode(x$debut, x$fin), "\u2014", lib)
   }, character(1)) else character()
-
   d = fiche$delegations
   delegations = if (nrow(d)) vapply(seq_len(nrow(d)), function(i) {
     x = d[i, ]
     lib = organisme(x$code)
-    if (is.na(lib)) lib = paste0('D\u00e9l\u00e9gation (code ', x$code, ')')
-    paste(periode(x$debut, x$fin), '\u2014', lib,
-          if (!is.na(x$designation)) paste0('(', tolower(x$designation), ')') else '')
+    if (is.na(lib)) lib = paste0("D\u00E9l\u00E9gation (code ", x$code, ")")
+    paste(periode(x$debut, x$fin), "\u2014", lib,
+          if (!is.na(x$designation)) paste0("(", tolower(x$designation), ")") else "")
   }, character(1)) else character()
-
   l = fiche$mandats_locaux
   mandats_locaux = if (nrow(l)) vapply(seq_len(nrow(l)), function(i) {
     x = l[i, ]
-    type = switch(valeur(x$type_mandat),
-                  CANTON = 'Mandat d\u00e9partemental', MUNICIPAL = 'Mandat municipal',
-                  valeur(x$type_mandat))
-    titre = reference('titele', 'titelecod', x$titre,
-                      c('titelelil', 'titelelib', 'titelelic', 'evelil', 'evelib'))
-    paste0(type, if (!is.na(titre)) paste0(' \u2014 ', titre) else '',
-           if (!is.na(x$organisme)) paste0(' \u2014 ', x$organisme) else '',
-           if (!is.na(x$departement)) paste0(' \u2014 ', territoire(x$departement)) else '',
-           if (!is.na(x$fonction)) paste0(' \u2014 ', x$fonction) else '')
+    type = switch(valeur(x$type_mandat), CANTON = "Mandat d\u00E9partemental",
+                  MUNICIPAL = "Mandat municipal", valeur(x$type_mandat))
+    titre = reference("titele", "titelecod", x$titre,
+                      c("titelelil", "titelelib", "titelelic", "evelil", "evelib"))
+    paste0(type, if (!is.na(titre)) paste0(" \u2014 ", titre) else "",
+           if (!is.na(x$organisme)) paste0(" \u2014 ", x$organisme) else "",
+           if (!is.na(x$departement)) paste0(" \u2014 ", territoire(x$departement)) else "",
+           if (!is.na(x$fonction)) paste0(" \u2014 ", x$fonction) else "")
   }, character(1)) else character()
-
-  # Les appartenances aux organismes senatoriaux sont nombreuses et parfois
-  # reduites a des evenements d'une journee : les presenter en annexe.
   o = fiche$organismes
   organismes = if (nrow(o)) vapply(seq_len(nrow(o)), function(i) {
     x = o[i, ]
-    lib = organisme(x$code, 'libgrpsen')
-    if (is.na(lib)) lib = paste0('Organisme (code ', x$code, ')')
-    paste(periode(x$debut, x$fin), '\u2014', lib)
+    lib = organisme(x$code, "libgrpsen")
+    if (is.na(lib)) lib = paste0("Organisme (code ", x$code, ")")
+    paste(periode(x$debut, x$fin), "\u2014", lib)
   }, character(1)) else character()
-
-  contenu = paste0('\\small\n',
-    section('Identit\u00e9', identite),
-    section('Mandats s\u00e9natoriaux', liste(mandats)),
-    section('Appartenances politiques', paste0(
-      liste(groupes),
-      '\\emph{Les codes de groupe sont ceux de la base historique ; les d\u00e9nominations actuelles ne sont pas substitu\u00e9es aux noms anciens.}\\par\n')),
-    section('Fonctions dans les groupes politiques', liste(fonctions_groupes)),
-    section('Commissions', liste(commissions)),
-    section('D\u00e9l\u00e9gations', liste(delegations)),
-    section('Autres mandats d\u00e9clar\u00e9s', liste(mandats_locaux)),
-    section('Autres organismes s\u00e9natoriaux', paste0(
-      ligne(paste(length(organismes), 'appartenances ou \u00e9v\u00e9nements document\u00e9s.')),
-      liste(organismes))))
-  chemin = .pdf_senateurs(paste0('Fiche : ', nom_affiche),
-    paste0('Source : S\u00e9nat ; extraction locale du ', format(Sys.time(), '%d/%m/%Y')),
-    contenu, sortie)
+  sections = list(
+    "Identit\u00E9" = identite,
+    "Mandats s\u00E9natoriaux" = mandats,
+    "Appartenances politiques" = groupes,
+    "Fonctions dans les groupes politiques" = fonctions_groupes,
+    "Commissions" = commissions,
+    "D\u00E9l\u00E9gations" = delegations,
+    "Autres mandats d\u00E9clar\u00E9s" = mandats_locaux,
+    "Autres organismes s\u00E9natoriaux" = organismes)
+  chemin = .pdf_questions_senat("fiche_senateur.Rmd", sections,
+    paste0("Fiche : ", nom_affiche),
+    paste0("Source : S\u00E9nat ; extraction locale du ", format(Sys.time(), "%d/%m/%Y")), sortie)
   .ouvrir_pdf_senateurs(chemin, ouvrir)
   invisible(chemin)
 }

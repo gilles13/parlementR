@@ -94,17 +94,15 @@ fiche_depute = function(nom, db = NULL) {
 #' @param db Connexion DuckDB facultative.
 #' @return Chemin du PDF, invisiblement.
 #' @export
-produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
+rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
   fiche = fiche_depute(nom, db = db)
   identite = fiche$identite
   nom_affiche = trimws(paste(identite$prenom, identite$nom))
   if (is.null(sortie)) sortie = file.path('/tmp', paste0('parlementR-fiche-depute-', identite$uid, '.pdf'))
-  esc = .echapper_latex_senateurs
-  valeur = function(x, defaut = '') {
-    if (is.null(x) || !length(x)) return(defaut)
-    if (is.list(x)) return(defaut)
-    y = trimws(paste(as.character(x), collapse = ', '))
-    if (is.na(y) || !nzchar(y) || identical(y, 'NA')) defaut else y
+  valeur = function(x, defaut = "") {
+    if (is.null(x) || !length(x) || is.list(x)) return(defaut)
+    y = trimws(paste(as.character(x), collapse = ", "))
+    if (is.na(y) || !nzchar(y) || identical(y, "NA")) defaut else y
   }
   champ = function(x, ...) {
     for (cle in c(...)) {
@@ -113,33 +111,10 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     }
     x
   }
-  # Les tables sont construites a partir des informations deja extraites :
-  # les references techniques ne sont pas des informations a afficher.
-  tableau = function(d, largeurs = NULL) {
-    if (!nrow(d)) return('\\emph{Aucune information renseign\u00e9e.}\\par\n')
-    d[] = lapply(d, function(z) {
-      z = as.character(z)
-      z[is.na(z) | !nzchar(trimws(z))] = '\\textemdash{}'
-      z
-    })
-    n = ncol(d)
-    if (is.null(largeurs)) largeurs = rep(0.94 / n, n)
-    cols = paste(sprintf('p{%.3f\\textwidth}', largeurs), collapse = '')
-    entete = paste(esc(names(d)), collapse = ' & ')
-    corps = vapply(seq_len(nrow(d)), function(i) {
-      cellules = vapply(d[i, , drop = FALSE], identity, character(1))
-      cellules = ifelse(cellules == '\\textemdash{}', cellules, esc(cellules))
-      paste0(if (i %% 2L == 0L) '\\rowcolor{gray!12}\n' else '',
-             paste(cellules, collapse = ' & '), ' \\\\ \n')
-    }, character(1))
-    paste0('\\begingroup\\footnotesize\n\\begin{longtable}{', cols, '}\n',
-           '\\hline ', entete, ' \\\\ \\hline\\endfirsthead\n',
-           '\\hline ', entete, ' \\\\ \\hline\\endhead\n',
-           paste0(corps, collapse = ''), '\\hline\n\\end{longtable}\\endgroup\n')
+  sections = list()
+  ajouter_section = function(titre, donnees) {
+    sections[[titre]] <<- donnees
   }
-  section = function(titre, x, nouvelle_page = TRUE) paste0(
-    if (nouvelle_page) '\\clearpage\n' else '',
-    '\\section*{', esc(titre), '}\n', x)
   info = function(libelle, x) data.frame(Information = libelle, Valeur = x, stringsAsFactors = FALSE)
   ident = fiche$acteur$etatCivil
   id = ident$ident
@@ -182,16 +157,9 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
   ajouter('Profession', profession)
   # Les liens HATVP sont affiches comme hyperliens, non comme champs bruts.
   ident_table = if (length(lignes)) do.call(rbind, lignes) else info('Identit\u00e9', nom_affiche)
-  contenu = section('Identit\u00e9 et parcours', tableau(ident_table, c(.31, .63)), FALSE)
-  lien = function(url, etiquette = NULL) {
-    url = valeur(url)
-    if (!grepl('^https?://', url, ignore.case = TRUE)) return('')
-    if (is.null(etiquette)) etiquette = url
-    # detokenize evite que les caracteres speciaux des URL cassent LaTeX.
-    paste0('\\href{\\detokenize{', url, '}}{', esc(etiquette), '}')
-  }
-  hatvp = lien(champ(fiche$acteur, 'uri_hatvp'), 'Consulter la declaration HATVP')
-  if (nzchar(hatvp)) contenu = paste0(contenu, '\\noindent ', hatvp, '\\par\n')
+  ajouter_section('Identit\u00E9 et parcours', ident_table)
+  hatvp = valeur(champ(fiche$acteur, "uri_hatvp"))
+  if (grepl("^https?://", hatvp)) ajouter_section("D\u00E9claration HATVP", hatvp)
 
   # Chaque mandat est une ligne lisible, enrichie du libelle de son organe.
   # On n'affiche plus une seconde fois les objets JSON des organes.
@@ -228,11 +196,8 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     d = d[order(d$Fin != 'En cours', d$Categorie, d$Organisme, -xtfrm(d$Debut)), , drop = FALSE]
     actifs = d[d$Fin == 'En cours', , drop = FALSE]
     anciens = d[d$Fin != 'En cours', , drop = FALSE]
-    contenu = paste0(contenu, section('Mandats et responsabilit\u00e9s en cours',
-      tableau(actifs, c(.17, .29, .22, .12, .14))))
-    if (nrow(anciens)) contenu = paste0(contenu,
-      section('Mandats et responsabilit\u00e9s ant\u00e9rieurs',
-        tableau(anciens, c(.17, .29, .22, .12, .14))))
+    ajouter_section("Mandats et responsabilit\u00E9s en cours", actifs)
+    if (nrow(anciens)) ajouter_section("Mandats et responsabilit\u00E9s ant\u00E9rieurs", anciens)
   }
 
 
@@ -257,12 +222,9 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     invisible(NULL)
   }
   for (m in fiche$mandats) collecter(m$collaborateurs)
-  if (length(collaborateurs)) {
-    noms = unique(unlist(collaborateurs, use.names = FALSE))
-    contenu = paste0(contenu, section('Collaborateurs parlementaires',
-      paste0('\\begin{itemize}\n', paste0('\\item ', esc(noms), '\n', collapse = ''),
-             '\\end{itemize}\n')))
-  }
+  if (length(collaborateurs))
+    ajouter_section("Collaborateurs parlementaires",
+                    unique(unlist(collaborateurs, use.names = FALSE)))
 
   # Coordonnees : lire les champs du referentiel AMO10, sans tableau
   # Information/Valeur. Les adresses peuvent contenir des champs differents.
@@ -284,13 +246,11 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     tel = valeur(a$numeroTelephone, valeur(a$telephone, valeur(a$tel)))
     mail = valeur(a$valElec, valeur(a$email))
     web = valeur(a$siteWeb, valeur(a$url))
-    elements = c(if (nzchar(type)) paste0('\\textbf{', esc(type), '}\\par\n'),
-      if (nzchar(rue)) paste0(esc(rue), '\\par\n'),
-      if (nzchar(ville)) paste0(esc(ville), '\\par\n'),
-      if (nzchar(tel)) paste0('Telephone : ', esc(tel), '\\par\n'),
-      if (grepl('^[^ @]+@[^ @]+$', mail)) paste0('Courriel : \\href{mailto:', mail, '}{', esc(mail), '}\\par\n'),
-      if (nzchar(web) && nzchar(lien(web))) paste0('Site : ', lien(web), '\\par\n'))
-    if (length(elements)) contacts <<- c(contacts, paste0(elements, collapse = ''))
+    elements = c(if (nzchar(type)) type, if (nzchar(rue)) rue,
+      if (nzchar(ville)) ville, if (nzchar(tel)) paste("T\u00E9l\u00E9phone :", tel),
+      if (grepl("^[^ @]+@[^ @]+$", mail)) paste("Courriel :", mail),
+      if (grepl("^https?://", web)) paste("Site :", web))
+    if (length(elements)) contacts <<- c(contacts, paste(elements, collapse = " ; "))
     invisible(NULL)
   }
   if (is.list(adresses)) {
@@ -298,9 +258,8 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
         !is.null(adresses$adressePostale)) lire_contact(adresses)
     else for (a in adresses) lire_contact(a)
   }
-  contenu = paste0(contenu, section('Coordonnees publiques',
-    if (length(contacts)) paste(unique(contacts), collapse = '\\medskip\n')
-    else '\\emph{Aucune coordonnee publique renseignee.}\\par\n'))
+  ajouter_section("Coordonn\u00E9es publiques", if (length(contacts)) unique(contacts)
+                  else "Aucune coordonn\u00E9e publique renseign\u00E9e.")
 
   # Le detail integral des deports reste accessible par fiche_depute(),
   # tandis que le PDF n'en restitue que les elements explicites.
@@ -315,13 +274,13 @@ produire_fiche_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     })
     deports = do.call(rbind, deports)
     deports = deports[nzchar(deports$Valeur), , drop = FALSE]
-    contenu = paste0(contenu, section('D\u00e9ports d\u00e9clar\u00e9s',
-      if (nrow(deports)) tableau(deports, c(.31, .63)) else
-        '\\emph{D\u00e9ports pr\u00e9sents dans les donn\u00e9es, sans description synth\u00e9tique disponible.}\\par\n'))
+    ajouter_section("D\u00E9ports d\u00E9clar\u00E9s", if (nrow(deports)) deports else
+      "D\u00E9ports pr\u00E9sents dans les donn\u00E9es, sans description synth\u00E9tique disponible.")
   }
-  chemin = .pdf_senateurs(paste0('Fiche : ', nom_affiche),
-    paste0('Source : Assembl\u00e9e nationale ; extraction locale du ', format(Sys.Date(), '%d/%m/%Y')),
-    contenu, sortie)
+  chemin = .pdf_questions_senat("fiche_depute.Rmd", sections,
+    paste0("Fiche : ", nom_affiche),
+    paste0("Source : Assembl\u00E9e nationale ; extraction locale du ", format(Sys.Date(), "%d/%m/%Y")),
+    sortie)
   .ouvrir_pdf_senateurs(chemin, ouvrir)
   invisible(chemin)
 }

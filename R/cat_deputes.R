@@ -1,4 +1,4 @@
-#' Fiche PDF des deputes par groupe parlementaire
+#' Catalogue PDF des deputes par groupe parlementaire (grid et Cairo)
 #'
 #' Exploite les mandats et organes AMO10 deja importes dans DuckDB.
 #' Les responsabilites institutionnelles sont deduites des mandats actifs.
@@ -6,10 +6,11 @@
 #' @param db Connexion DBI facultative ; NULL utilise connexion().
 #' @param groupe Sigle du groupe (par exemple "LFI-NFP"), ou NULL pour tous.
 #' @param enrichie Ajouter les fonctions particulieres (FALSE par defaut).
-#' @param fichier Chemin du PDF ; par defaut, un fichier dans /tmp.
+#' @param fichier Chemin du PDF ; par defaut, /tmp/parlementR-deputes.pdf.
+#' @param ouvrir Ouvrir le PDF apres generation.
 #' @return Chemin du PDF, invisiblement.
 #' @export
-cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NULL) {
+cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NULL, ouvrir = TRUE) {
   db = .connexion_valide(db)
   if (!is.null(groupe) && (!is.character(groupe) || length(groupe) != 1L ||
                            is.na(groupe) || !nzchar(trimws(groupe)))) {
@@ -18,14 +19,10 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
   if (!is.logical(enrichie) || length(enrichie) != 1L || is.na(enrichie)) {
     stop("'enrichie' doit valoir TRUE ou FALSE.")
   }
-  if (is.null(fichier)) fichier = file.path(tempdir(), "parlementR-deputes.pdf")
+  if (is.null(fichier)) fichier = "/tmp/parlementR-deputes.pdf"
   if (!is.character(fichier) || length(fichier) != 1L || is.na(fichier) ||
       !nzchar(fichier) || !grepl("\\.pdf$", fichier, ignore.case = TRUE)) {
     stop("'fichier' doit etre un chemin PDF.")
-  }
-  if (!requireNamespace("rmarkdown", quietly = TRUE) ||
-      !requireNamespace("knitr", quietly = TRUE)) {
-    stop("Les packages 'rmarkdown' et 'knitr' sont necessaires.")
   }
 
   # json_each gere les mandats imbriques sans modifier les tables sources.
@@ -103,33 +100,10 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
   deputes$circonscription = ifelse(is.na(deputes$departement), "",
     paste0(deputes$departement, ifelse(is.na(deputes$circo), "",
       paste0(" (", deputes$circo, ")"))))
-  deputes = deputes[order(deputes$groupe, !deputes$president, deputes$nom, deputes$prenom), , drop = FALSE]
-  etiquettes = paste0(deputes$groupe, " (", deputes$sigle, ")")
-  tableaux = lapply(split(seq_len(nrow(deputes)), factor(etiquettes, levels = unique(etiquettes))),
-                    function(i) {
-    tab = tibble::tibble(
-      "D\u00e9put\u00e9" = paste0(ifelse(deputes$president[i], "PRESIDENTPARLEMENTR", ""),
-                             deputes$prenom[i], " ", deputes$nom[i]),
-      "Circonscription" = deputes$circonscription[i],
-      .name_repair = "minimal"
-    )
-    if (enrichie) tab[["Fonctions particuli\u00e8res"]] = deputes$fonction[i]
-    tab
-  })
-  synthese = tibble::tibble(
-    Groupe = names(tableaux),
-    Deputes = vapply(tableaux, nrow, integer(1)),
-    .name_repair = "minimal"
-  )
-  synthese = synthese[order(-synthese$Deputes, synthese$Groupe), , drop = FALSE]
-  effectifs = data.frame(groupe = deputes$sigle, n = 1L) |>
-    dplyr::group_by(groupe) |>
-    dplyr::summarise(n = sum(n), .groups = "drop")
-  hemicycle = if (all(effectifs$groupe %in% c("LFI-NFP", "GDR", "SOC", "EcoS", "EPR", "Dem", "HOR", "LIOT", "NI", "DR", "UDR", "RN"))) graphique_hemicycle(effectifs, titre = NULL) else NULL
-  modele = system.file("modeles", "fiche_deputes.Rmd", package = "parlementR")
-  if (!nzchar(modele)) stop("Modele PDF introuvable dans le package.")
+  effectifs_groupes = table(deputes$sigle)
+  deputes = deputes[order(-as.integer(effectifs_groupes[deputes$sigle]),
+    deputes$groupe, !deputes$president, deputes$nom, deputes$prenom), , drop = FALSE]
   dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
-  cible = normalizePath(dirname(fichier), mustWork = TRUE)
   # Provenance du jeu AMO10 utilise par cette fiche.
   source = .source_archive("deputes", tools::R_user_dir("parlementR", "cache"))
   suivi = tryCatch(.db_get_tibble(db, paste0(
@@ -157,18 +131,10 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
     "Dernier contr\u00f4le" = date_controle,
     "Traitement" = "parlementR - mandats actifs et groupes parlementaires"
   )
-  metadonnees = vapply(metadonnees, .echapper_latex_senateurs, character(1))
-  sortie = rmarkdown::render(
-    input = modele,
-    output_file = basename(fichier),
-    output_dir = cible,
-    params = list(tableaux = tableaux, synthese = synthese, hemicycle = hemicycle, total = nrow(deputes),
-      metadonnees = metadonnees, source_url = source$url,
-      titre = .echapper_latex_senateurs("Assembl\u00e9e nationale - D\u00e9put\u00e9s"),
-      sous_titre = .echapper_latex_senateurs(paste0(nrow(deputes), " d\u00e9put\u00e9s - \u00c9dition du ", format(Sys.Date(), "%d/%m/%Y"))),
-      logo = .logo_pdf_parlementR()),
-    envir = new.env(parent = globalenv()),
-    quiet = TRUE
+  chemin = .pdf_catalogue_deputes_grid(
+    deputes = deputes, metadonnees = metadonnees,
+    source_url = source$url, fichier = fichier, enrichie = enrichie
   )
-  invisible(normalizePath(sortie))
+  .ouvrir_pdf(chemin, ouvrir)
+  invisible(chemin)
 }

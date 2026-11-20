@@ -35,5 +35,5 @@ rapport_gvt = function(gvt, date = NULL, sortie = NULL, ouvrir = TRUE,
     sous_titre = if (is.null(date)) "Historique des mandats" else
       paste("Composition au", format(as.Date(date), "%d/%m/%Y")),
     sortie = sortie)
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

@@ -8,7 +8,7 @@ utils::globalVariables(c("n", "groupe", "angle", "rang", "x", "y", "label"))
 #' @export
 graphique_hemicycle = function(donnees, titre = "Assembl\u00e9e nationale", rangees = 10L) {
   ordre = c("LFI-NFP", "GDR", "SOC", "EcoS", "EPR", "Dem", "HOR", "LIOT", "NI", "DR", "UDR", "RN")
-  couleurs = c("LFI-NFP" = "#C62828", "GDR" = "#9B1C31", "SOC" = "#E57399", "EcoS" = "#43A047", "EPR" = "#F4B400", "Dem" = "#F28E2B", "HOR" = "#5DADE2", "LIOT" = "#9575CD", "NI" = "#999999", "DR" = "#2874A6", "UDR" = "#174A7E", "RN" = "#142D62")
+  couleurs = .couleurs_groupes()
   noms = c("LFI-NFP" = "La France insoumise - Nouveau Front Populaire", "GDR" = "Gauche d\u00e9mocrate et r\u00e9publicaine", "SOC" = "Socialistes et apparent\u00e9s", "EcoS" = "\u00c9cologiste et Social", "EPR" = "Ensemble pour la R\u00e9publique", "Dem" = "Les D\u00e9mocrates", "HOR" = "Horizons & Ind\u00e9pendants", "LIOT" = "Libert\u00e9s, Ind\u00e9pendants, Outre-mer et Territoires", "NI" = "Non inscrits", "DR" = "Droite R\u00e9publicaine", "UDR" = "Union des droites pour la R\u00e9publique", "RN" = "Rassemblement National")
   if (!all(c("groupe", "n") %in% names(donnees))) stop("Colonnes groupe et n requises.")
   if (anyNA(donnees$groupe) || anyNA(donnees$n) || any(!is.finite(donnees$n)) || any(donnees$n < 0) || any(donnees$n != floor(donnees$n))) stop("Groupes ou effectifs invalides.")

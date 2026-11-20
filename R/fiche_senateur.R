@@ -71,7 +71,8 @@ fiche_senateur = function(nom, db = NULL) {
 #' @param db Connexion DuckDB facultative.
 #' @return Chemin du PDF, invisiblement.
 #' @export
-rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
+rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL,
+                              cache = tools::R_user_dir("parlementR", "cache")) {
   con = .connexion_valide(db)
   fiche = fiche_senateur(nom, db = con)
   id = fiche$identite[1, ]
@@ -190,7 +191,6 @@ rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     paste(periode(x$debut, x$fin), "\u2014", lib)
   }, character(1)) else character()
   sections = list(
-    "Identit\u00E9" = identite,
     "Mandats s\u00E9natoriaux" = mandats,
     "Appartenances politiques" = groupes,
     "Fonctions dans les groupes politiques" = fonctions_groupes,
@@ -198,9 +198,26 @@ rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     "D\u00E9l\u00E9gations" = delegations,
     "Autres mandats d\u00E9clar\u00E9s" = mandats_locaux,
     "Autres organismes s\u00E9natoriaux" = organismes)
-  chemin = .pdf_questions_senat("fiche_senateur.Rmd", sections,
-    paste0("Fiche : ", nom_affiche),
-    paste0("Source : S\u00E9nat ; extraction locale du ", format(Sys.time(), "%d/%m/%Y")), sortie)
-  .ouvrir_pdf_senateurs(chemin, ouvrir)
+  naissance = suppressWarnings(as.Date(id$sendatnai))
+  date_naissance = "Inconnu"
+  if (!is.na(naissance)) {
+    age = as.integer(format(Sys.Date(), "%Y")) -
+      as.integer(format(naissance, "%Y"))
+    if (format(Sys.Date(), "%m-%d") < format(naissance, "%m-%d"))
+      age = age - 1L
+    date_naissance = paste0(format(naissance, "%d/%m/%Y"), " (", age, " ans)")
+  }
+  identite_table = data.frame(
+    Information = c("Civilit\u00E9", "Date de naissance", "Lieu de naissance",
+                    "Profession", "Groupe politique"),
+    Valeur = c("Inconnu", date_naissance, "Inconnu",
+               valeur(id$sendespro, "Inconnu"),
+               if (nrow(g)) valeur(g$libelle[nrow(g)], "Inconnu") else "Inconnu"),
+    stringsAsFactors = FALSE)
+  photo = file.path(cache, "senat", "photos", paste0(id$senmat, ".jpg"))
+  if (!.photo_jpeg(photo)) photo = NULL
+  chemin = .pdf_fiche_depute_grid(nom_affiche, identite_table, sections,
+    photo, sortie, assemblee = "Senat", source = "Senat")
+  .ouvrir_pdf(chemin, ouvrir)
   invisible(chemin)
 }

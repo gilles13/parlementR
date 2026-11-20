@@ -112,7 +112,7 @@ nuage_compte_rendu_an = function(mots, n = 100L) {
 #' @param n Nombre de mots dans le nuage.
 #' @return Chemin du PDF (invisible).
 #' @export
-rapport_compte_rendu_an = function(cr, fichier = file.path(tempdir(), paste0(cr$reference, ".pdf")), exclusions = character(), n = 100L) {
+rapport_compte_rendu_an = function(cr, fichier = file.path(tempdir(), paste0(cr$reference, ".pdf")), exclusions = character(), n = 100L, ouvrir = TRUE) {
   if (!requireNamespace("rmarkdown", quietly = TRUE) || !requireNamespace("knitr", quietly = TRUE)) stop("Installer 'rmarkdown' et 'knitr'")
   mots = mots_compte_rendu_an(cr, exclusions = exclusions)
   if (!nrow(mots)) stop("Aucun mot apres filtrage")
@@ -124,5 +124,7 @@ rapport_compte_rendu_an = function(cr, fichier = file.path(tempdir(), paste0(cr$
     output_dir = normalizePath(dirname(fichier), mustWork = TRUE),
     params = list(cr = cr, mots = mots, n = n), quiet = TRUE,
     envir = new.env(parent = globalenv()))
-  invisible(normalizePath(resultat, mustWork = TRUE))
+  chemin = normalizePath(resultat, mustWork = TRUE)
+  .ouvrir_pdf(chemin, ouvrir)
+  invisible(chemin)
 }

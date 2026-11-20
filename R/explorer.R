@@ -53,7 +53,7 @@ rechercher_parlementaires = function(texte = "", chambre = c("toutes", "an", "se
 #' @param db Connexion DuckDB facultative.
 #' @return Une application Shiny (a lancer avec `shiny::runApp()`).
 #' @export
-explorer = function(db = NULL) {
+explorer_parlementaires = function(db = NULL) {
   if (!requireNamespace("shiny", quietly = TRUE)) stop("Installer Shiny : install.packages('shiny').", call. = FALSE)
   if (!requireNamespace("DT", quietly = TRUE)) stop("Installer DT : install.packages('DT').", call. = FALSE)
   db = .connexion_valide(db)
@@ -84,6 +84,33 @@ explorer = function(db = NULL) {
     )
   )
   server = function(input, output, session) {
+    selection = shiny::reactive({
+      x = donnees()
+      i = input$resultats_rows_selected
+      shiny::req(length(i) == 1L, i >= 1L, i <= nrow(x))
+      x[i, , drop = FALSE]
+    })
+
+    chemin_photo = shiny::reactive({
+      y = selection()
+      cache = tools::R_user_dir("parlementR", "cache")
+      if (y$chambre[[1L]] == "Assembl\u00e9e nationale") {
+        fichier = file.path(cache, "assemblee_nationale", "photos", "17",
+                            paste0(y$id[[1L]], ".jpg"))
+      } else {
+        fichier = file.path(cache, "senat", "photos",
+                            paste0(y$id[[1L]], ".jpg"))
+      }
+      if (.photo_jpeg(fichier)) fichier else NULL
+    })
+
+    output$portrait = shiny::renderImage({
+      fichier = chemin_photo()
+      shiny::req(!is.null(fichier))
+      list(src = fichier, contentType = "image/jpeg",
+           alt = "Photographie officielle", width = 140)
+    }, deleteFile = FALSE)
+
     recherche = shiny::debounce(shiny::reactive(input$recherche), 250)
     donnees = shiny::reactive({
       if (!nzchar(trimws(recherche()))) return(rechercher_parlementaires("", chambre = input$onglet, db = db)[0, ])
@@ -102,19 +129,26 @@ explorer = function(db = NULL) {
           ordering = FALSE))
     }, server = FALSE)
     output$fiche = shiny::renderUI({
-      x = donnees()
-      i = input$resultats_rows_selected
-      shiny::req(length(i) == 1L, i >= 1L, i <= nrow(x))
-      y = x[i, ]
+      y = selection()
       valeur = function(z) if (is.na(z) || !nzchar(as.character(z))) "Non renseign\u00e9" else as.character(z)
       shiny::tagList(
         shiny::h3(paste(y$prenom, y$nom)),
-        shiny::tags$dl(
-          shiny::tags$dt("Chambre"), shiny::tags$dd(valeur(y$chambre)),
-          shiny::tags$dt("Identifiant officiel"), shiny::tags$dd(valeur(y$id)),
-          shiny::tags$dt("Date de naissance"), shiny::tags$dd(valeur(y$naissance)),
-          shiny::tags$dt("Groupe politique"), shiny::tags$dd(valeur(y$groupe)),
-          shiny::tags$dt("D\u00e9partement / circonscription"), shiny::tags$dd(valeur(y$territoire))
+        shiny::fluidRow(
+          shiny::column(3,
+            if (!is.null(chemin_photo()))
+              shiny::imageOutput("portrait", width = "140px", height = "180px")
+            else shiny::tags$em("Photographie non disponible dans le cache local")
+          ),
+          shiny::column(9,
+            shiny::tags$dl(
+              shiny::tags$dt("Chambre"), shiny::tags$dd(valeur(y$chambre)),
+              shiny::tags$dt("Identifiant officiel"), shiny::tags$dd(valeur(y$id)),
+              shiny::tags$dt("Date de naissance"), shiny::tags$dd(valeur(y$naissance)),
+              shiny::tags$dt("Groupe politique"), shiny::tags$dd(valeur(y$groupe)),
+              shiny::tags$dt("D\u00e9partement / circonscription"),
+              shiny::tags$dd(valeur(y$territoire))
+            )
+          )
         )
       )
     })

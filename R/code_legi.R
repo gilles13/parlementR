@@ -1,24 +1,84 @@
-# Fonctions de lecture locale des codes LEGI.
-.legi_code = function(db, code) {
-  if (length(code) != 1L || is.na(code) || !nzchar(trimws(code)))
-    stop("Code invalide")
-  textes = DBI::dbGetQuery(db, "SELECT id, titre FROM legi.textes")
-  normaliser = function(x) {
-    x = iconv(tolower(trimws(x)), from = "UTF-8", to = "ASCII//TRANSLIT")
-    if (anyNA(x)) stop("Normalisation des noms de codes impossible")
-    gsub("[[:space:]]+", " ", x)
-  }
-  cible = normaliser(code)
-  noms = normaliser(textes$titre)
-  candidats = which(noms == cible)
-  if (!length(candidats)) {
-    variantes = paste(c("code", "code de", "code du", "code de la", "code des", "code d'"), cible)
-    candidats = which(noms %in% variantes)
-  }
-  if (length(candidats) != 1L)
-    stop("Code introuvable ou ambigu : ", code)
-  textes[candidats, , drop = FALSE]
+# Date de la derniere archive LEGI effectivement importee dans la base locale.
+.legi_version_installee = function(db) {
+  archives = DBI::dbGetQuery(db, paste0(
+    "SELECT type, horodatage FROM suivi.archives_legi ",
+    "WHERE type IN ('quotidienne', 'globale') ",
+    "ORDER BY CASE WHEN type = 'quotidienne' THEN 0 ELSE 1 END, ",
+    "horodatage DESC LIMIT 1"))
+  if (!nrow(archives)) stop("LEGI : aucune archive importee dans suivi.archives_legi")
+  date = as.Date(substr(archives$horodatage[[1L]], 1L, 8L), format = "%Y%m%d")
+  if (is.na(date)) stop("LEGI : horodatage d'archive invalide")
+  paste0("Version LEGI : ", format(date, "%d/%m/%Y"),
+         if (archives$type[[1L]] == 'globale') " (archive globale)" else "")
 }
+
+# Fonctions de lecture locale des codes LEGI.
+# Catalogue des noms courts, construit exclusivement depuis les textes LEGI locaux.
+.legi_catalogue = function(db) {
+  textes = DBI::dbGetQuery(db, "SELECT id, titre FROM legi.textes ORDER BY titre, id")
+  textes = textes[!is.na(textes$titre) & nzchar(trimws(textes$titre)), , drop = FALSE]
+  noms = iconv(tolower(trimws(textes$titre)), from = "UTF-8", to = "ASCII//TRANSLIT")
+  if (anyNA(noms)) stop("Normalisation des codes impossible")
+  noms = gsub("^code (de la |de l'|des |du |de |d')", "", noms)
+  noms = sub("^code ", "", noms)
+  noms = gsub("[^a-z0-9]+", "_", noms)
+  noms = gsub("^_+|_+$", "", noms)
+  noms[noms %in% c("general_des_impots", "general_des_impots_cgi")] = "impots_cgi"
+  noms[grepl("^general_des_impots_annexe_i_cgiani$", noms)] = "impots_ani"
+  noms[grepl("^general_des_impots_annexe_ii_cgianii$", noms)] = "impots_anii"
+  noms[grepl("^general_des_impots_annexe_iii_cgianiii$", noms)] = "impots_aniii"
+  noms[grepl("^general_des_impots_annexe_iv_cgianiv$", noms)] = "impots_aniv"
+  noms[noms == "des_impositions_sur_les_biens_et_services"] = "impot_biens_services"
+  noms[noms == "livre_des_procedures_fiscales"] = "impots_procedures"
+  # Eviter toute collision, de facon reproductible, sans changer les noms uniques.
+  doublons = duplicated(noms) | duplicated(noms, fromLast = TRUE)
+  noms[doublons] = paste0(noms[doublons], "_", gsub("[^a-zA-Z0-9]", "", textes$id[doublons]))
+  if (anyDuplicated(noms)) stop("Noms simplifies non uniques")
+  data.frame(id = textes$id, nom_complet = textes$titre,
+             nom_simplifie = noms, stringsAsFactors = FALSE)
+}
+
+#' Rechercher les noms simplifies des codes LEGI installes
+#'
+#' @param recherche Texte facultatif recherche dans le nom complet ou simplifie.
+#' @param db Connexion DuckDB facultative.
+#' @return Tibble de deux colonnes : nom_complet et nom_simplifie.
+#' @export
+recherche_code = function(recherche = NULL, db = NULL) {
+  db = if (is.null(db)) connexion() else .connexion_valide(db)
+  catalogue = .legi_catalogue(db)
+  x = catalogue[, c("nom_complet", "nom_simplifie")]
+  # Libelles courts pour l'affichage uniquement ; le titre LEGI reste intact.
+  x$nom_complet = sub("^Code (de la |de l'|des |du |de |d')", "", x$nom_complet)
+  x$nom_complet = sub("^Code ", "", x$nom_complet)
+  x$nom_complet = sub("^g\u00e9n\u00e9ral des imp\u00f4ts - Annexe ", "Imp\u00f4ts - annexe ", x$nom_complet, ignore.case = TRUE)
+  x$nom_complet = sub("^g\u00e9n\u00e9ral des imp\u00f4ts, annexe ", "Imp\u00f4ts - annexe ", x$nom_complet, ignore.case = TRUE)
+  x$nom_complet = sub("^g\u00e9n\u00e9ral des imp\u00f4ts annexe ", "Imp\u00f4ts - annexe ", x$nom_complet, ignore.case = TRUE)
+  x$nom_complet = ifelse(nchar(x$nom_complet, type = "chars") > 30L,
+                         paste0(substr(x$nom_complet, 1L, 27L), "..."),
+                         x$nom_complet)
+  if (!is.null(recherche)) {
+    if (!is.character(recherche) || length(recherche) != 1L || is.na(recherche))
+      stop("Recherche invalide")
+    filtre = grepl(recherche, catalogue$nom_complet, fixed = TRUE, ignore.case = TRUE) |
+             grepl(recherche, x$nom_complet, fixed = TRUE, ignore.case = TRUE) |
+             grepl(recherche, x$nom_simplifie, fixed = TRUE, ignore.case = TRUE)
+    x = x[filtre, , drop = FALSE]
+  }
+  tibble::as_tibble(x)
+}
+
+.legi_code = function(db, code) {
+  if (!is.character(code) || length(code) != 1L || is.na(code) || !nzchar(trimws(code)))
+    stop("Code invalide. Utiliser recherche_code() pour les noms disponibles.")
+  catalogue = .legi_catalogue(db)
+  candidats = which(catalogue$nom_simplifie == code | catalogue$nom_complet == code)
+  if (length(candidats) != 1L)
+    stop("Code introuvable ou ambigu : '", code,
+         "'. Pour identifier le bon nom simplifie, utiliser recherche_code().")
+  catalogue[candidats, c("id", "nom_complet", "nom_simplifie")]
+}
+
 .legi_html = function(x) {
   x = gsub("&", "&amp;", x, fixed = TRUE)
   x = gsub("<", "&lt;", x, fixed = TRUE)
@@ -29,9 +89,9 @@
   extraction = if (!is.null(suivi) && nrow(suivi) && !is.na(suivi$date_import[[1L]])) format(as.Date(suivi$date_import[[1L]]), "%d/%m/%Y") else "non renseignee"
   md5 = if (!is.null(suivi) && nrow(suivi) && !is.na(suivi$md5[[1L]])) suivi$md5[[1L]] else "non renseigne"
   url = if (is.null(id_article)) paste0("https://www.legifrance.gouv.fr/codes/texte_lc/", id_texte) else paste0("https://www.legifrance.gouv.fr/codes/article_lc/", id_article)
-  list(extraction = extraction, md5 = md5, url = url)
+  list(extraction = extraction, md5 = md5, url = url, version = .legi_version_installee(db))
 }
-.legi_pdf = function(titre, sous_titre, contenu, sortie, ouvrir, metadata, police = 10) {
+.legi_pdf = function(titre, sous_titre, contenu, sortie, ouvrir, metadata, police = 10, logo = 1L) {
   if (length(police) != 1L || !is.numeric(police) || is.na(police) || !is.finite(police) || police <= 0) stop("Police invalide")
   if (!is.data.frame(contenu) || !all(c("texte", "profondeur", "gras") %in% names(contenu)))
     stop("Contenu PDF invalide")
@@ -61,7 +121,7 @@
   on.exit(grDevices::dev.off(), add = TRUE)
   for (p in seq_along(pages)) {
     grid::grid.newpage()
-    .entete(titre, sous_titre)
+    .entete(titre, sous_titre, logo = logo)
     for (ligne in pages[[p]]) {
       grid::grid.text(ligne$texte, x = .08 + .025 * ligne$profondeur, y = ligne$y,
         just = "left", gp = grid::gpar(fontsize = police,
@@ -70,7 +130,7 @@
     grid::grid.lines(x = c(.08, .92), y = c(.105, .105),
       gp = grid::gpar(col = "#AAAAAA", lwd = .6))
     grid::grid.text(paste0("Source : LEGI / L\u00e9gifrance  |  Extraction : ", metadata$extraction,
-      "  |  MD5 : ", metadata$md5), x = .08, y = .084, just = "left",
+      "  |  ", metadata$version, "  |  MD5 : ", metadata$md5), x = .08, y = .084, just = "left",
       gp = grid::gpar(fontsize = 7, col = "#666666"))
     grid::grid.text(metadata$url, x = .08, y = .063, just = "left",
       gp = grid::gpar(fontsize = 7, col = "#666666"))
@@ -106,10 +166,11 @@
 #' @param ouvrir Ouvrir le PDF dans zathura.
 #' @param police Taille du texte principal en points.
 #' @param db Connexion DuckDB facultative.
+#' @param logo Entier de 1 a 6 (defaut : 1).
 #' @return Chemin du PDF, invisiblement.
 #' @export
 produire_code = function(code = "civil", article = "1240", sortie = NULL,
-                         ouvrir = TRUE, db = NULL, police = 10) {
+                         ouvrir = TRUE, db = NULL, police = 10, logo = 1L) {
   db = if (is.null(db)) connexion() else .connexion_valide(db)
   texte = .legi_code(db, code)
   lignes = DBI::dbGetQuery(db, paste0(
@@ -121,8 +182,8 @@ produire_code = function(code = "civil", article = "1240", sortie = NULL,
                               " (", nrow(lignes), " correspondances)")
   paragraphes = .legi_extraire_texte(lignes$contenu[[1]])
   contenu = data.frame(texte = paragraphes, profondeur = 0L, gras = FALSE)
-  .legi_pdf(texte$titre[[1]], paste0("Article ", lignes$numero[[1]]),
-            contenu, sortie, ouvrir, .legi_metadonnees(db, texte$id[[1]], lignes$id[[1]]), police = police)
+  .legi_pdf(texte$nom_complet[[1]], paste0("Article ", lignes$numero[[1]]),
+            contenu, sortie, ouvrir, .legi_metadonnees(db, texte$id[[1]], lignes$id[[1]]), police = police, logo = logo)
 }
 #' Produire le sommaire officiel d'un code LEGI en PDF
 #'
@@ -139,10 +200,14 @@ produire_code = function(code = "civil", article = "1240", sortie = NULL,
 #' @param ouvrir Ouvrir le PDF dans zathura.
 #' @param police Taille du texte principal en points.
 #' @param db Connexion DuckDB facultative.
-#' @return Chemin du PDF, invisiblement.
+#' @param logo Entier de 1 a 6 (defaut : 1).
+#' @param format Format de sortie : PDF ou donnees structurees.
+#' @return Chemin du PDF ou tableau si format = 'donnees'.
 #' @export
 sommaire_code = function(code = "civil", niveau = 3, date = Sys.Date(),
-                         articles = FALSE, sortie = NULL, ouvrir = TRUE, db = NULL, police = 10) {
+                         articles = FALSE, sortie = NULL, ouvrir = TRUE, db = NULL, police = 10,
+                         format = c("pdf", "donnees"), logo = 1L) {
+  format = match.arg(format)
   if (length(niveau) != 1L || is.na(niveau) || niveau < 0 ||
       (!is.infinite(niveau) && niveau != floor(niveau))) stop("Niveau invalide")
   date = as.Date(date)
@@ -211,9 +276,10 @@ sommaire_code = function(code = "civil", niveau = 3, date = Sys.Date(),
   }
   for (i in seq_len(nrow(racines)))
     ajouter(racines$id_cible[[i]], racines$type[[i]], 0L, character())
-  if (!compteur) stop("Aucune entree de sommaire pour ", texte$titre[[1]])
+  if (!compteur) stop("Aucune entree de sommaire pour ", texte$nom_complet[[1]])
   contenu = data.frame(texte = sortie_texte, profondeur = sortie_profondeur,
                         gras = sortie_gras, stringsAsFactors = FALSE)
-  .legi_pdf(paste0("Sommaire ", texte$titre[[1]]), paste0("Niveau ", niveau),
-            contenu, sortie, ouvrir, .legi_metadonnees(db, id), police = police)
+  if (format == "donnees") return(contenu)
+  .legi_pdf(paste0("Sommaire ", texte$nom_complet[[1]]), paste0("Niveau ", niveau),
+            contenu, sortie, ouvrir, .legi_metadonnees(db, id), police = police, logo = logo)
 }

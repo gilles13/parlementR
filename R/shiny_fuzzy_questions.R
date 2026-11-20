@@ -10,7 +10,7 @@
 #' @param limite Nombre maximal de lignes affichees dans le tableau.
 #' @return Une application Shiny.
 #' @export
-shiny_fuzzy_questions = function(db = NULL, limite = 30L) {
+explorer_questions_floues = function(db = NULL, limite = 30L) {
   if (!requireNamespace("shiny", quietly = TRUE))
     stop("Installer le package facultatif 'shiny' : install.packages('shiny')",
          call. = FALSE)

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="445" height="120" viewBox="0 0 445 120" role="img" aria-label="parlementR">
+  <title>parlementR</title>
+  <g transform="translate(294 8)">
+    <path fill="#777" fill-rule="evenodd" d="M 69,8 C 30,8 3,27 3,51 C 3,76 30,95 69,95 C 108,95 135,76 135,51 C 135,27 108,8 69,8 Z M 69,23 C 96,23 116,35 116,51 C 116,67 96,80 69,80 C 42,80 22,67 22,51 C 22,35 42,23 69,23 Z"/>
+    <path fill="#222" d="M 61,35 L 88,35 C 107,35 117,44 117,56 C 117,65 112,71 104,74 C 111,76 113,81 117,89 L 124,104 L 100,104 L 94,90 C 90,81 87,79 78,79 L 78,104 L 61,104 Z M 78,49 L 78,66 L 87,66 C 96,66 100,63 100,57 C 100,51 96,49 87,49 Z"/>
+  </g>
+  <text x="12" y="82" fill="#222" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="51" font-weight="600" letter-spacing="-1.5">parlement</text>
+</svg>

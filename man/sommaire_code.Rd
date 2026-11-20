@@ -12,7 +12,9 @@ sommaire_code(
   sortie = NULL,
   ouvrir = TRUE,
   db = NULL,
-  police = 10
+  police = 10,
+  format = c("pdf", "donnees"),
+  logo = 1L
 )
 }
 \arguments{
@@ -31,9 +33,13 @@ sommaire_code(
 \item{db}{Connexion DuckDB facultative.}
 
 \item{police}{Taille du texte principal en points.}
+
+\item{format}{Format de sortie : PDF ou donnees structurees.}
+
+\item{logo}{Entier de 1 a 6 (defaut : 1).}
 }
 \value{
-Chemin du PDF, invisiblement.
+Chemin du PDF ou tableau si format = 'donnees'.
 }
 \description{
 Les subdivisions sont parcourues dans l'ordre des liens LEGI. Le niveau

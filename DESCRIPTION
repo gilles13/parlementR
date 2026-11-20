@@ -6,8 +6,8 @@ Description: Importe et conserve les donnees ouvertes parlementaires dans DuckDB
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
-Imports: DBI, RPostgres, duckdb, png, grid, tibble, jsonlite, xml2, dplyr, ggplot2
-Suggests: testthat, knitr, rmarkdown, pkgdown, shiny, DT, rvest, tidytext, stopwords, ggwordcloud, viridis
+Imports: DBI, RPostgres, duckdb, png, jpeg, grid, tibble, jsonlite, xml2, dplyr, ggplot2
+Suggests: rsvg, testthat, knitr, rmarkdown, pkgdown, shiny, DT, rvest, tidytext, stopwords, ggwordcloud, viridis
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0

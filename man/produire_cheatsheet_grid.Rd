@@ -18,7 +18,7 @@ produire_cheatsheet_grid(
 Chemin du PDF, invisiblement.
 }
 \description{
-Genere un guide PDF de cinq pages A4 paysage, sans Chromium.
+Genere un guide PDF de cinq pages A4 paysage avec grid et Cairo.
 La premiere page presente les prerequis R et systeme.
 Les applications Shiny sont identifiees par des blocs jaunes.
 }

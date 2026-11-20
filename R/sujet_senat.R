@@ -123,5 +123,5 @@ rech_amdt_senat = function(sujet, db = NULL) {
   }
   chemin = .pdf_questions_senat("documents_recherche.Rmd", donnees,
     titre, as.character(donnees$sujet), fichier)
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

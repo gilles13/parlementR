@@ -4,7 +4,13 @@
 \alias{rapport_depute}
 \title{Produire la fiche PDF synthetique d'un depute}
 \usage{
-rapport_depute(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
+rapport_depute(
+  nom,
+  sortie = NULL,
+  ouvrir = TRUE,
+  db = NULL,
+  cache = tools::R_user_dir("parlementR", "cache")
+)
 }
 \arguments{
 \item{nom}{Nom ou prenom et nom du depute.}
@@ -14,6 +20,8 @@ rapport_depute(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
 \item{ouvrir}{Ouvrir le PDF apres generation.}
 
 \item{db}{Connexion DuckDB facultative.}
+
+\item{cache}{Repertoire du cache local des photographies.}
 }
 \value{
 Chemin du PDF, invisiblement.

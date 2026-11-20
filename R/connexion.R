@@ -37,17 +37,27 @@ connexion = function(chemin = NULL, creer = FALSE) {
       stop("Impossible de creer le repertoire de la base : ", dirname(chemin))
   }
   db = DBI::dbConnect(duckdb::duckdb(), dbdir = chemin)
-  tryCatch(
-    DBI::dbExecute(db, "LOAD icu"),
-    error = function(e) {
-      DBI::dbDisconnect(db, shutdown = TRUE)
-      stop("Extension DuckDB 'icu' indisponible pour cette version de DuckDB.\n",
-           "Installer une fois l'extension avec une connexion DuckDB :\n",
-           "  DBI::dbExecute(db, 'INSTALL icu')\n",
-           "Puis relancer connexion().\n",
-           "Detail : ", conditionMessage(e), call. = FALSE)
-    }
-  )
+  # Une extension DuckDB est installee pour une version precise du moteur.
+  # Apres une mise a jour, une installation ponctuelle peut etre necessaire.
+  erreur_icu = tryCatch({
+    DBI::dbExecute(db, "LOAD icu")
+    NULL
+  }, error = function(e) e)
+
+  if (!is.null(erreur_icu)) {
+    erreur_icu = tryCatch({
+      DBI::dbExecute(db, "INSTALL icu")
+      DBI::dbExecute(db, "LOAD icu")
+      NULL
+    }, error = function(e) e)
+  }
+
+  if (!is.null(erreur_icu)) {
+    DBI::dbDisconnect(db, shutdown = TRUE)
+    stop("Impossible de charger ou d'installer l'extension DuckDB 'icu'. ",
+         "Verifier la connexion reseau, puis reessayer connexion(). ",
+         "Detail : ", conditionMessage(erreur_icu), call. = FALSE)
+  }
   .connexions$db = db
   .connexions$chemin = chemin
   db

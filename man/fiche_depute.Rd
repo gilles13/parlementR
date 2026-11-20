@@ -4,15 +4,17 @@
 \alias{fiche_depute}
 \title{Fiche exhaustive d'un depute dans les donnees locales}
 \usage{
-fiche_depute(nom, db = NULL)
+fiche_depute(nom, db = NULL, cache = tools::R_user_dir("parlementR", "cache"))
 }
 \arguments{
 \item{nom}{Nom du depute recherche.}
 
 \item{db}{Connexion DuckDB facultative.}
+
+\item{cache}{Repertoire du cache local des photographies.}
 }
 \value{
-Liste contenant identite, acteur, mandats, organes et deports.
+Liste contenant identite, acteur, mandats, organes, deports et photo.
 }
 \description{
 Recherche par nom, prenom et nom, ou nom et prenom. Les homonymes

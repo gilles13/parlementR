@@ -1,6 +1,6 @@
 #' Produire la cheatsheet avec Grid et Cairo
 #'
-#' Genere un guide PDF de cinq pages A4 paysage, sans Chromium.
+#' Genere un guide PDF de cinq pages A4 paysage avec grid et Cairo.
 #' La premiere page presente les prerequis R et systeme.
 #' Les applications Shiny sont identifiees par des blocs jaunes.
 #' @param sortie Chemin du fichier PDF produit.
@@ -9,7 +9,10 @@
 #' @export
 produire_cheatsheet_grid = function(sortie = "/tmp/parlementR-cheatsheet-grid.pdf",
                                    ouvrir = TRUE) {
-    stopifnot(requireNamespace('grid', quietly = TRUE))
+  if (!capabilities('cairo'))
+    stop('Le support Cairo est necessaire pour produire la cheatsheet.', call. = FALSE)
+  sortie = normalizePath(sortie, mustWork = FALSE)
+  dir.create(dirname(sortie), recursive = TRUE, showWarnings = FALSE)
   largeur = 86
   police = 8.8
   police_code = 7.8
@@ -38,7 +41,7 @@ produire_cheatsheet_grid = function(sortie = "/tmp/parlementR-cheatsheet-grid.pd
     list(S('1 \u00B7 D\u00E9marrer','blue'),
          B('Installer et connecter','Installer depuis GitHub avec remotes, puis ouvrir la base DuckDB locale.','install.packages("remotes")\nremotes::install_github("gilles13/parlementR")\nlibrary(parlementR)',''),
          B('Actualiser les donn\u00E9es','T\u00E9l\u00E9charger les jeux n\u00E9cessaires, sans r\u00E9import inutile.','actualiser(jeux = "deputes")',''),
-         B('D\u00E9put\u00E9s','Catalogue, fiche et rapport individuel.','cat_deputes()\nfiche_depute("Dupont")\nrapport_depute("Dupont")','')),
+         B('D\u00E9put\u00E9s et portraits','Catalogue, fiche, rapport et photos officielles.','actualiser(jeux = "photos_an")\ncat_deputes()\nfiche_depute("Dupont")\nrapport_depute("Dupont")','')),
     list(S('D\u00E9put\u00E9s et gouvernement','blue'),
          B('Rechercher un parlementaire','Recherche dans les deux chambres.','rechercher_parlementaires("Dupont")',''),
          B('Gouvernements','Catalogues, ministres, missions et rapport.','cat_gvts()\ncat_gvt("Bayrou")\ncat_missions_gvt()\nrapport_gvt(...)',''),
@@ -59,12 +62,12 @@ produire_cheatsheet_grid = function(sortie = "/tmp/parlementR-cheatsheet-grid.pd
          B('Amendements AN','Recherche et rapport \u00E0 partir des donn\u00E9es retourn\u00E9es.','actualiser(jeux = "amendements")\na = rech_amdt_an(sujet = "fiscalit\u00E9")\nrapport_amdt_an(a)',''),
          B('Relier aux scrutins','Appariement des amendements et votes.','relier_amdt_scrutins(a)',''),
          B('Questions AN','Importer les questions \u00E9crites, orales et au gvt.','actualiser(jeux = "questions_an")',''),
-         B('Shiny \u00B7 Questions','Recherche interactive de questions.','shiny_fuzzy_questions()','shiny')),
+         B('Shiny \u00B7 Questions','Recherche interactive de questions.','explorer("questions_floues")','shiny')),
     list(S('3 \u00B7 S\u00E9nat','coral'),
-         B('S\u00E9nateurs','Catalogue, fiche et rapport.','actualiser(jeux = "senateurs")\ncat_senateurs()\nfiche_senateur("Dupont")\nrapport_senateur("Dupont")',''),
+         B('S\u00E9nateurs et portraits','Catalogue, fiche, rapport et photos officielles.','actualiser(jeux = "senateurs")\nactualiser(jeux = "photos_senat")\ncat_senateurs()\nfiche_senateur("Dupont")\nrapport_senateur("Dupont")',''),
          B('Questions du S\u00E9nat','Catalogue, recherche, fiche et rapport.','actualiser(jeux = "questions_senat")\ncat_quest_senat()\nrech_quest_senat(sujet = "logement")\nfiche_quest_senat(id)\nrapport_quest_senat(id)','')),
     list(S('S\u00E9nat \u00B7 approfondir','coral'),
-         B('Shiny \u00B7 Questions S\u00E9nat','Explorer les questions s\u00E9natoriales.','shiny_senat_question()','shiny'),
+         B('Shiny \u00B7 Questions S\u00E9nat','Explorer les questions s\u00E9natoriales.','explorer("questions")','shiny'),
          B('Th\u00E8mes et amendements','Recherche par th\u00E8mes et amendements du S\u00E9nat.','rech_themes_senat()\nrech_amdt_senat("logement")\nrapport_amdt_senat(references)',''),
          B('Dossiers l\u00E9gislatifs S\u00E9nat','Importer les dossiers du S\u00E9nat.','actualiser(jeux = "dosleg")','')),
     list(S('Recherche documentaire','coral'),
@@ -75,18 +78,17 @@ produire_cheatsheet_grid = function(sortie = "/tmp/parlementR-cheatsheet-grid.pd
          B('R\u00E9unions et d\u00E9bats','Actualiser les sources AN compl\u00E9mentaires.','actualiser(jeux = c("reunions", "debats"))',''),
          B('Un seul point d\u2019entr\u00E9e','Utiliser actualiser() pour importer les jeux, sans appeler directement les importeurs sp\u00E9cialis\u00E9s.','actualiser(jeux = c("dole", "dosleg"))','')),
     list(S('LEGI \u00B7 Codes','gold'),
-         B('Installer LEGI','Archive globale locale \u00E0 fournir explicitement.','actualiser(jeux = "legi",\n  archive = "/chemin/legi.tar.gz")',''),
+         B('Actualiser LEGI','T\u00E9l\u00E9chargement et import des donn\u00E9es DILA.','actualiser(jeux = "legi")',''),
          B('Parcourir les codes','Sommaire et production d\'un article.','sommaire_code("civil")\nproduire_code("civil", "1240")',''),
-         B('Shiny \u00B7 Consulter les codes','Exploration interactive des textes et articles.','consulter_codes()','shiny'),
-         B('Archive volumineuse','Pr\u00E9voir du temps et de l\u2019espace disque pour LEGI.','')),
+         B('Shiny \u00B7 Consulter les codes','Exploration interactive des textes et articles.','explorer("codes")','shiny'),
+         B('Code complet en PDF','Exporter un code dans sa version en vigueur.','produire_code_complet("civil")','')),
     list(S('Outils et documentation','gold'),
-         B('Produire les cheatsheets','Deux moteurs disponibles pendant la transition.','produire_cheatsheet_grid()\nproduire_cheatsheet()',''),
+         B('Produire la cheatsheet','Guide PDF produit directement avec grid et Cairo.','produire_cheatsheet_grid()',''),
          B('Connexion locale','Connexion DuckDB partag\u00E9e et fermeture explicite.','connexion(); fermer_base()',''),
 
          B('Documentation du package','Aide et exemples des fonctions.','help(package = "parlementR")',''))
   )
   hauteurs = vapply(colonnes, function(col) sum(vapply(col, hauteur_bloc, numeric(1)) + 4), numeric(1))
-  print(round(hauteurs, 1))
   if (any(hauteurs > 153)) warning('Colonnes depassant 153 mm : ', paste(which(hauteurs > 153), collapse=', '))
   W = 297; H = 210
   rect = function(x, y, w, h, fill, bord = NA, rayon = 0) grid::grid.roundrect(x = grid::unit(x, 'mm'), y = grid::unit(H-y-h, 'mm'), width = grid::unit(w, 'mm'), height = grid::unit(h, 'mm'), r = grid::unit(rayon, 'mm'), just = c('left','bottom'), gp = grid::gpar(fill = fill, col = bord, lwd = .7))
@@ -117,7 +119,7 @@ produire_cheatsheet_grid = function(sortie = "/tmp/parlementR-cheatsheet-grid.pd
   }
 
     grDevices::cairo_pdf(sortie,width=W/25.4,height=H/25.4,onefile=TRUE)
-    on.exit(grDevices::dev.off(),add=TRUE)
+    on.exit(if (grDevices::dev.cur() > 1L) grDevices::dev.off(), add = TRUE)
     for (page in 1:5) {
       grid::grid.newpage()
       texte('parlementR \u00B7 Guide de d\u00E9marrage',9,8,19,'#18344e',TRUE)
@@ -132,7 +134,7 @@ produire_cheatsheet_grid = function(sortie = "/tmp/parlementR-cheatsheet-grid.pd
       texte('Donn\u00E9es officielles \u00B7 analyses locales DuckDB',9,200,7.5,'#627789')
       texte(paste0(page,' / 5'),271,200,8,'#627789')
     }
-    grDevices::dev.off(); on.exit(NULL,add=FALSE)
+    grDevices::dev.off(); on.exit(NULL, add = FALSE)
     if (isTRUE(ouvrir)) utils::browseURL(sortie)
     invisible(sortie)
 }

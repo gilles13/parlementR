@@ -2,9 +2,15 @@
 % Please edit documentation in R/cat_deputes.R
 \name{cat_deputes}
 \alias{cat_deputes}
-\title{Fiche PDF des deputes par groupe parlementaire}
+\title{Catalogue PDF des deputes par groupe parlementaire (grid et Cairo)}
 \usage{
-cat_deputes(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NULL)
+cat_deputes(
+  db = NULL,
+  groupe = NULL,
+  enrichie = FALSE,
+  fichier = NULL,
+  ouvrir = TRUE
+)
 }
 \arguments{
 \item{db}{Connexion DBI facultative ; NULL utilise connexion().}
@@ -13,7 +19,9 @@ cat_deputes(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NULL)
 
 \item{enrichie}{Ajouter les fonctions particulieres (FALSE par defaut).}
 
-\item{fichier}{Chemin du PDF ; par defaut, un fichier dans /tmp.}
+\item{fichier}{Chemin du PDF ; par defaut, /tmp/parlementR-deputes.pdf.}
+
+\item{ouvrir}{Ouvrir le PDF apres generation.}
 }
 \value{
 Chemin du PDF, invisiblement.

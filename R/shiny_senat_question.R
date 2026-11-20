@@ -8,7 +8,7 @@
 #' @param db Connexion DuckDB locale ouverte.
 #' @return Lance une application Shiny dans la session R.
 #' @export
-shiny_senat_question = function(db = NULL) {
+explorer_questions = function(db = NULL) {
   requis = c("shiny", "DT")
   manquants = requis[!vapply(requis, requireNamespace, logical(1), quietly = TRUE)]
   if (length(manquants)) stop(

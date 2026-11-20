@@ -11,7 +11,7 @@
 #' @return Chemin du PDF (invisible), ou tibble si pdf = FALSE.
 #' @export
 cat_dosleg_an = function(sujet, db = NULL, limite = 100L,
-                           sortie = NULL, ouvrir = FALSE, pdf = TRUE) {
+                           sortie = NULL, ouvrir = TRUE, pdf = TRUE) {
   dossiers = rech_dosleg_an(sujet, db = db, limite = limite)
   if (!isTRUE(pdf)) return(dossiers)
   .verifier_volume_rapport(nrow(dossiers), seuil_alerte = 100L,
@@ -28,5 +28,5 @@ cat_dosleg_an = function(sujet, db = NULL, limite = 100L,
     titre = "Assembl\u00e9e nationale - Recherche de sujets",
     sous_titre = titre, sortie = sortie
   )
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

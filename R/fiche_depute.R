@@ -41,9 +41,11 @@
 #' provoquent une erreur explicite et les noms proches sont proposes.
 #' @param nom Nom du depute recherche.
 #' @param db Connexion DuckDB facultative.
-#' @return Liste contenant identite, acteur, mandats, organes et deports.
+#' @param cache Repertoire du cache local des photographies.
+#' @return Liste contenant identite, acteur, mandats, organes, deports et photo.
 #' @export
-fiche_depute = function(nom, db = NULL) {
+fiche_depute = function(nom, db = NULL,
+                         cache = tools::R_user_dir("parlementR", "cache")) {
   con = .connexion_valide(db)
   for (table in c('acteurs', 'organes', 'deports')) {
     if (!DBI::dbExistsTable(con, DBI::Id(schema = 'an_deputes', table = table)))
@@ -82,8 +84,10 @@ fiche_depute = function(nom, db = NULL) {
   }
   deports = lapply(candidats$contenu, jsonlite::fromJSON, simplifyVector = FALSE)
   deports = deports[vapply(deports, contient, logical(1), valeur = id)]
+  photo = file.path(cache, 'assemblee_nationale', 'photos', '17', paste0(id, '.jpg'))
+  if (!.photo_jpeg(photo)) photo = NULL
   structure(list(identite = personne, acteur = document,
-                 mandats = mandats, organes = organes, deports = deports),
+                 mandats = mandats, organes = organes, deports = deports, photo = photo),
             class = c('fiche_depute', 'list'))
 }
 
@@ -92,10 +96,12 @@ fiche_depute = function(nom, db = NULL) {
 #' @param sortie Chemin du PDF, dans /tmp par defaut.
 #' @param ouvrir Ouvrir le PDF apres generation.
 #' @param db Connexion DuckDB facultative.
+#' @param cache Repertoire du cache local des photographies.
 #' @return Chemin du PDF, invisiblement.
 #' @export
-rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
-  fiche = fiche_depute(nom, db = db)
+rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL,
+                           cache = tools::R_user_dir("parlementR", "cache")) {
+  fiche = fiche_depute(nom, db = db, cache = cache)
   identite = fiche$identite
   nom_affiche = trimws(paste(identite$prenom, identite$nom))
   if (is.null(sortie)) sortie = file.path('/tmp', paste0('parlementR-fiche-depute-', identite$uid, '.pdf'))
@@ -139,7 +145,7 @@ rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
   if (length(groupes)) ajouter('Groupe politique', paste(groupes, collapse = ', '))
   ajouter('Nom', champ(id, 'nom'))
   ajouter('Pr\u00e9nom', champ(id, 'prenom'))
-  ajouter('Civilit\u00e9', champ(id, 'civ'))
+  ajouter("Civilit\u00e9", valeur(champ(id, "civ"), "Inconnu"))
   naissance = valeur(champ(ident, 'infoNaissance', 'dateNais'))
   date_naissance = suppressWarnings(as.Date(substr(naissance, 1L, 10L)))
   if (!is.na(date_naissance) && date_naissance <= Sys.Date()) {
@@ -148,8 +154,8 @@ rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     if (format(aujourd_hui, '%m-%d') < format(date_naissance, '%m-%d')) age = age - 1L
     naissance = paste0(naissance, ' (', age, ' ans)')
   }
-  ajouter('Date de naissance', naissance)
-  ajouter('Lieu de naissance', champ(ident, 'infoNaissance', 'villeNais'))
+  ajouter("Date de naissance", if (nzchar(naissance)) naissance else "Inconnu")
+  ajouter("Lieu de naissance", valeur(champ(ident, "infoNaissance", "villeNais"), "Inconnu"))
   ajouter('D\u00e9partement de naissance', champ(ident, 'infoNaissance', 'depNais'))
   ajouter('Pays de naissance', champ(ident, 'infoNaissance', 'paysNais'))
   profession = valeur(champ(fiche$acteur, 'profession', 'libelleCourant'),
@@ -157,7 +163,6 @@ rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
   ajouter('Profession', profession)
   # Les liens HATVP sont affiches comme hyperliens, non comme champs bruts.
   ident_table = if (length(lignes)) do.call(rbind, lignes) else info('Identit\u00e9', nom_affiche)
-  ajouter_section('Identit\u00E9 et parcours', ident_table)
   hatvp = valeur(champ(fiche$acteur, "uri_hatvp"))
   if (grepl("^https?://", hatvp)) ajouter_section("D\u00E9claration HATVP", hatvp)
 
@@ -277,10 +282,8 @@ rapport_depute = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL) {
     ajouter_section("D\u00E9ports d\u00E9clar\u00E9s", if (nrow(deports)) deports else
       "D\u00E9ports pr\u00E9sents dans les donn\u00E9es, sans description synth\u00E9tique disponible.")
   }
-  chemin = .pdf_questions_senat("fiche_depute.Rmd", sections,
-    paste0("Fiche : ", nom_affiche),
-    paste0("Source : Assembl\u00E9e nationale ; extraction locale du ", format(Sys.Date(), "%d/%m/%Y")),
-    sortie)
-  .ouvrir_pdf_senateurs(chemin, ouvrir)
+  chemin = .pdf_fiche_depute_grid(nom_affiche, ident_table, sections,
+                                  fiche$photo, sortie)
+  .ouvrir_pdf(chemin, ouvrir)
   invisible(chemin)
 }

@@ -181,6 +181,6 @@ senateurs_synthese = function(
                       " ; s\u00E9lection : ", type,
                       if (!is.null(groupe)) paste0(" ; groupe : ", groupe) else "")
   chemin = .pdf_senateurs("Synth\u00E8se des s\u00E9nateurs", sous_titre, contenu, sortie)
-  .ouvrir_pdf_senateurs(chemin, ouvrir)
+  .ouvrir_pdf(chemin, ouvrir)
   invisible(chemin)
 }

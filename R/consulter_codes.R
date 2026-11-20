@@ -5,17 +5,18 @@
 #' @param db Connexion DuckDB facultative.
 #' @return Application Shiny.
 #' @export
-consulter_codes = function(db = NULL) {
+explorer_codes = function(db = NULL) {
   requis = c("shiny", "DT")
   manquants = requis[!vapply(requis, requireNamespace, logical(1), quietly = TRUE)]
   if (length(manquants)) stop("Packages necessaires : ", paste(manquants, collapse = ", "))
   db = if (is.null(db)) connexion() else .connexion_valide(db)
-  codes = DBI::dbGetQuery(db, "SELECT id, COALESCE(NULLIF(titre_long, ''), titre) AS titre FROM legi.textes WHERE titre ILIKE '%code%' ORDER BY titre")
+  codes = .legi_catalogue(db)
+  codes = codes[order(codes$nom_complet, codes$id), , drop = FALSE]
   ui = shiny::fluidPage(
     shiny::titlePanel("Consultation des codes juridiques"),
     shiny::sidebarLayout(
       shiny::sidebarPanel(
-        shiny::selectInput("code", "Code", choices = stats::setNames(codes$id, codes$titre), width = "100%"),
+        shiny::selectInput("code", "Code", choices = stats::setNames(codes$id, paste0(codes$nom_simplifie, " \u2014 ", codes$nom_complet)), width = "100%"),
         shiny::textInput("numero", "Numero d'article", placeholder = "Ex. L123-1"),
         shiny::actionButton("chercher", "Rechercher", class = "btn-primary")
       ),

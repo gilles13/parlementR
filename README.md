@@ -113,7 +113,7 @@ Les rapports reprennent ce sujet automatiquement lorsque leur titre en depend.
 # Après actualiser(jeux = c("deputes", "senateurs"))
 rechercher_parlementaires("Dupont")
 # Interface facultative : install.packages("shiny")
-shiny::runApp(explorer())
+explorer()
 ```
 
 L'application utilise uniquement les données déjà présentes dans DuckDB.

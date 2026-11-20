@@ -98,7 +98,7 @@
 #' @return Chemin du PDF (invisible), ou liste des donnees du rapport.
 #' @export
 rapport_scrutin_an = function(scrutin, db = NULL, contexte = NULL,
-                                  sortie = NULL, ouvrir = FALSE, pdf = TRUE,
+                                  sortie = NULL, ouvrir = TRUE, pdf = TRUE,
                                   amendement_uid = NULL) {
   if (!is.character(scrutin) || length(scrutin) != 1L || is.na(scrutin) ||
       !grepl("^(VTANR[[:alnum:]]+|[0-9]+)$", scrutin))
@@ -170,5 +170,5 @@ rapport_scrutin_an = function(scrutin, db = NULL, contexte = NULL,
     "Assemblee nationale - Rapport de scrutin",
     paste0("Scrutin n\u00b0 ", s$numero[[1L]]), sortie
   )
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

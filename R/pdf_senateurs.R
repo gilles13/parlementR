@@ -15,8 +15,8 @@
 }
 
 .logo_pdf_parlementR = function() {
-  logo = system.file("assets", "logo_hexa.png", package = "parlementR")
-  if (!nzchar(logo)) logo = file.path("inst", "assets", "logo_hexa.png")
+  logo = system.file("assets", "logo_hexa_small.png", package = "parlementR")
+  if (!nzchar(logo)) logo = file.path("inst", "assets", "logo_hexa_small.png")
   if (!file.exists(logo)) stop("Logo hexagonal introuvable.", call. = FALSE)
   normalizePath(logo, winslash = "/", mustWork = TRUE)
 }
@@ -37,7 +37,7 @@
   normalizePath(resultat, mustWork = TRUE)
 }
 
-.ouvrir_pdf_senateurs = function(chemin, ouvrir = TRUE) {
+.ouvrir_pdf = function(chemin, ouvrir = TRUE) {
   message("PDF produit : ", chemin)
   if (isTRUE(ouvrir)) {
     commande = Sys.which("xdg-open")

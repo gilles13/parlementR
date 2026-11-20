@@ -10,7 +10,7 @@
 #' @return Chemin du PDF (invisible) ou tableau fourni.
 #' @export
 rapport_amdt_an = function(donnees, sujet = NULL, sortie = NULL,
-                                     ouvrir = FALSE, pdf = TRUE) {
+                                     ouvrir = TRUE, pdf = TRUE) {
   requis = c("uid", "numero", "auteur", "groupe", "date_depot", "etat",
              "sort", "texte", "article", "dispositif", "expose")
   if (!is.data.frame(donnees)) stop("'donnees' doit etre un tableau")
@@ -20,7 +20,11 @@ rapport_amdt_an = function(donnees, sujet = NULL, sortie = NULL,
   if (!isTRUE(pdf)) return(donnees)
   .verifier_volume_rapport(length(unique(donnees$uid)))
   if (!requireNamespace("knitr", quietly = TRUE)) stop("Installer 'knitr' pour produire le PDF")
-  if (is.null(sortie)) sortie = "/tmp/parlementR-suivi-amendements.pdf"
+  if (is.null(sortie)) {
+    ids = unique(as.character(donnees$uid))
+    ref = if (length(ids) == 1L) ids else paste0("selection_", length(ids))
+    sortie = file.path("/tmp", paste0("amdt_an_", ref, ".pdf"))
+  }
   if (!is.character(sortie) || length(sortie) != 1L || is.na(sortie) ||
       !nzchar(sortie) || tolower(tools::file_ext(sortie)) != "pdf")
     stop("'sortie' doit designer un fichier PDF")
@@ -33,5 +37,5 @@ rapport_amdt_an = function(donnees, sujet = NULL, sortie = NULL,
     titre = "Assembl\u00e9e nationale - Suivi des amendements",
     sous_titre = entete, sortie = sortie
   )
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

@@ -9,7 +9,7 @@ rech_docs(terme, sources = NULL, db = NULL, limite = 100L)
 \arguments{
 \item{terme}{Expression a rechercher.}
 
-\item{sources}{Sources parmi `ameli`, `dosleg`, `questions_senat`, `amendements_an`, `scrutins_an`.
+\item{sources}{Sources parmi `ameli`, `dosleg`, `questions_senat`, `amendements_an`, `scrutins_an`, `questions_an`, `debats_an`, `reunions_an`, `dole` et `legi`.
 NULL interroge toutes les sources disponibles.}
 
 \item{db}{Connexion DuckDB ; NULL utilise connexion().}
@@ -21,7 +21,7 @@ Le resultat conserve le sujet recherche dans l'attribut `sujet`.}
 Tibble de documents, de classe `parlementR_documents`.
 }
 \description{
-La recherche est litterale, insensible a la casse. Chaque resultat conserve
+La recherche est litterale, insensible a la casse et aux accents. Chaque resultat conserve
 sa source, son type et son identifiant officiel. Les sources absentes sont
 signalees dans l'attribut `sources_absentes`.
 }

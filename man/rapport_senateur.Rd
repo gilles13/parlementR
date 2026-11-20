@@ -4,7 +4,13 @@
 \alias{rapport_senateur}
 \title{Produire une fiche biographique lisible pour un senateur}
 \usage{
-rapport_senateur(nom, sortie = NULL, ouvrir = TRUE, db = NULL)
+rapport_senateur(
+  nom,
+  sortie = NULL,
+  ouvrir = TRUE,
+  db = NULL,
+  cache = tools::R_user_dir("parlementR", "cache")
+)
 }
 \arguments{
 \item{nom}{Nom ou prenom et nom du senateur.}

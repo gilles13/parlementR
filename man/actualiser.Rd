@@ -17,11 +17,12 @@ actualiser(
 \arguments{
 \item{db}{Connexion DBI facultative ; NULL initialise la base au besoin.}
 
-\item{jeux}{Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli", "rne", "legi".}
+\item{jeux}{Un ou plusieurs jeux : "deputes", "historique", "scrutins", "dossiers", "amendements", "senateurs", "dosleg", "dole", "questions_senat", "questions_an", "debats", "reunions", "ameli", "rne", "legi", "photos_an", "photos_senat".}
 
 \item{cache}{Repertoire de cache persistant.}
 
-\item{archive}{Chemin facultatif vers une archive ZIP locale (un seul jeu).}
+\item{archive}{Chemin facultatif vers une archive locale (un seul jeu). Pour LEGI,
+archive globale ou quotidienne tar.gz ; sans archive, telechargement DILA.}
 
 \item{verbose}{Afficher les etapes (par defaut TRUE).}
 

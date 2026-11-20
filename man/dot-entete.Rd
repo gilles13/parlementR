@@ -11,7 +11,7 @@
 
 \item{sous_titre}{Texte facultatif sous le titre.}
 
-\item{logo}{Afficher le logo du package.}
+\item{logo}{Entier de 1 a 6, ou booleen pour compatibilite.}
 }
 \value{
 Invisible NULL.

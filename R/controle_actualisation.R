@@ -18,7 +18,7 @@
     schema = attendu
     tables = .tables_schema(db, schema)
     if (!length(tables)) return(FALSE)
-    if (!DBI::dbExistsTable(db, DBI::Id(schema = "suivi", table = "tables_attendues")))
+    if (!"tables_attendues" %in% .tables_schema(db, "suivi"))
       return(FALSE)
     manifeste = DBI::dbGetQuery(db,
       "SELECT table_name FROM suivi.tables_attendues WHERE jeu = ? ORDER BY table_name",
@@ -27,8 +27,8 @@
   }
   all(vapply(attendu, function(nom) {
     morceaux = strsplit(nom, ".", fixed = TRUE)[[1L]]
-    length(morceaux) == 2L && DBI::dbExistsTable(db,
-      DBI::Id(schema = morceaux[[1L]], table = morceaux[[2L]]))
+    length(morceaux) == 2L &&
+      morceaux[[2L]] %in% .tables_schema(db, morceaux[[1L]])
   }, logical(1)))
 }
 

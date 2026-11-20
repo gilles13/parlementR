@@ -9,7 +9,7 @@
 #' @return Chemin PDF invisible ou tibble.
 #' @export
 cat_quest_senat = function(sujet = NULL, db = NULL, limite = 100L,
-                              sortie = NULL, ouvrir = FALSE, pdf = TRUE,
+                              sortie = NULL, ouvrir = TRUE, pdf = TRUE,
                               theme = NULL) {
   x = rech_quest_senat(sujet, db = db, limite = limite, theme = theme)
   if (!isTRUE(pdf)) return(x)
@@ -26,7 +26,7 @@ cat_quest_senat = function(sujet = NULL, db = NULL, limite = 100L,
     titre = "S\u00e9nat - Questions parlementaires",
     sous_titre = etiquette, sortie = sortie
   )
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }
 
 #' Produire une fiche PDF de question et reponses
@@ -38,7 +38,7 @@ cat_quest_senat = function(sujet = NULL, db = NULL, limite = 100L,
 #' @return Chemin PDF invisible ou liste de tibbles.
 #' @export
 rapport_quest_senat = function(id, db = NULL, sortie = NULL,
-                             ouvrir = FALSE, pdf = TRUE) {
+                             ouvrir = TRUE, pdf = TRUE) {
   x = fiche_quest_senat(id, db = db)
   if (!isTRUE(pdf)) return(x)
   if (is.null(sortie)) sortie = file.path("/tmp", paste0("parlementR-question-", id, ".pdf"))
@@ -52,5 +52,5 @@ rapport_quest_senat = function(id, db = NULL, sortie = NULL,
     titre = "S\u00e9nat - Question parlementaire",
     sous_titre = titre, sortie = sortie
   )
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

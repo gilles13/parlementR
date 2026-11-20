@@ -9,7 +9,7 @@
 #' @param pdf Si FALSE, renvoyer les tables sans produire de PDF.
 #' @return Chemin du PDF (invisible), ou liste des tables.
 #' @export
-rapport_dosleg_an = function(uid, db = NULL, sortie = NULL, ouvrir = FALSE, pdf = TRUE) {
+rapport_dosleg_an = function(uid, db = NULL, sortie = NULL, ouvrir = TRUE, pdf = TRUE) {
   if (!is.character(uid) || length(uid) != 1L || is.na(uid) ||
       !grepl("^[A-Za-z0-9_-]+$", uid))
     stop("'uid' doit etre un identifiant officiel valide")
@@ -67,5 +67,5 @@ rapport_dosleg_an = function(uid, db = NULL, sortie = NULL, ouvrir = FALSE, pdf 
     titre = "Assemblee nationale - Dossier legislatif",
     sous_titre = titre, sortie = sortie
   )
-  .ouvrir_pdf_senateurs(chemin, ouvrir = ouvrir)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
 }

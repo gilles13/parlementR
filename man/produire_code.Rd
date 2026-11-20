@@ -10,7 +10,8 @@ produire_code(
   sortie = NULL,
   ouvrir = TRUE,
   db = NULL,
-  police = 10
+  police = 10,
+  logo = 1L
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ produire_code(
 \item{db}{Connexion DuckDB facultative.}
 
 \item{police}{Taille du texte principal en points.}
+
+\item{logo}{Entier de 1 a 6 (defaut : 1).}
 }
 \value{
 Chemin du PDF, invisiblement.

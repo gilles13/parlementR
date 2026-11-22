@@ -13,10 +13,10 @@
 
 .actualiser_photos = function(db, jeu, cache, forcer = FALSE, verbose = TRUE) {
   if (jeu == "photos_an") {
-    if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_deputes", table = "acteurs")))
+    if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_amo10", table = "acteurs")))
       stop("Importer les deputes avant les photographies AN")
     ids = DBI::dbGetQuery(db, paste0(
-      "SELECT DISTINCT uid FROM an_deputes.acteurs ",
+      "SELECT DISTINCT uid FROM an_amo10.acteurs ",
       "WHERE uid LIKE 'PA%' ORDER BY uid"))$uid
     urls = sprintf("https://www.assemblee-nationale.fr/dyn/static/tribun/17/photos/carre/%s.jpg",
                    sub("^PA", "", ids))

@@ -1,3 +1,55 @@
+
+# Migration locale des anciens schemas AMO, sans telechargement.
+.migrer_schemas_amo = function(db) {
+  correspondances = c(an_deputes = "an_amo10",
+                      an_historique = "an_amo30")
+  schemas = DBI::dbGetQuery(db,
+    "SELECT schema_name FROM information_schema.schemata")$schema_name
+  anciens = names(correspondances)[names(correspondances) %in% schemas]
+  if (!length(anciens)) return(invisible(FALSE))
+
+  tables = DBI::dbGetQuery(db, "
+    SELECT table_schema, table_name
+    FROM information_schema.tables
+    WHERE table_type = 'BASE TABLE'
+      AND table_schema IN ('an_deputes', 'an_historique')
+    ORDER BY table_schema, table_name")
+  if (!nrow(tables)) return(invisible(FALSE))
+  if (any(!tables$table_name %in% c("acteurs", "organes", "deports")))
+    stop("Migration AMO interrompue : tables inattendues dans les anciens schemas.",
+         call. = FALSE)
+
+  DBI::dbBegin(db)
+  tryCatch({
+    for (ancien in unique(tables$table_schema)) {
+      nouveau = unname(correspondances[[ancien]])
+      DBI::dbExecute(db, paste("CREATE SCHEMA IF NOT EXISTS", nouveau))
+      for (table in tables$table_name[tables$table_schema == ancien]) {
+        destination = paste0(nouveau, ".", table)
+        source = paste0(ancien, ".", table)
+        if (DBI::dbExistsTable(db, DBI::Id(schema = nouveau, table = table)))
+          stop("Migration AMO interrompue : destination deja presente : ",
+               destination, call. = FALSE)
+        DBI::dbExecute(db, paste("CREATE TABLE", destination,
+                                 "AS SELECT * FROM", source))
+        nombres = DBI::dbGetQuery(db, paste0(
+          "SELECT (SELECT count(*) FROM ", source, ") AS avant, ",
+          "(SELECT count(*) FROM ", destination, ") AS apres"))
+        if (!identical(nombres$avant, nombres$apres))
+          stop("Migration AMO : effectifs differents pour ", source,
+               call. = FALSE)
+        DBI::dbExecute(db, paste("DROP TABLE", source))
+      }
+      DBI::dbExecute(db, paste("DROP SCHEMA", ancien))
+    }
+    DBI::dbCommit(db)
+  }, error = function(e) {
+    DBI::dbRollback(db)
+    stop(e)
+  })
+  invisible(TRUE)
+}
+
 # Connexion DuckDB geree par parlementR, ouverte a la demande.
 .connexions = new.env(parent = emptyenv())
 
@@ -21,7 +73,10 @@ connexion = function(chemin = NULL, creer = FALSE) {
   if (exists("db", envir = .connexions, inherits = FALSE)) {
     db = .connexions$db
     if (isTRUE(tryCatch(DBI::dbIsValid(db), error = function(e) FALSE))) {
-      if (identical(.connexions$chemin, chemin)) return(db)
+      if (identical(.connexions$chemin, chemin)) {
+        .migrer_schemas_amo(db)
+        return(db)
+      }
       stop("Une connexion vers une autre base est deja ouverte. ",
            "Appeler fermer_base() avant de changer de base.")
     }
@@ -31,7 +86,8 @@ connexion = function(chemin = NULL, creer = FALSE) {
   if (!file.exists(chemin)) {
     if (!creer)
       stop("Base DuckDB introuvable : ", chemin,
-           "\nExecuter actualiser() pour initialiser la base.")
+           "
+Executer actualiser() pour initialiser la base.")
     dir.create(dirname(chemin), recursive = TRUE, showWarnings = FALSE)
     if (!dir.exists(dirname(chemin)))
       stop("Impossible de creer le repertoire de la base : ", dirname(chemin))
@@ -58,6 +114,7 @@ connexion = function(chemin = NULL, creer = FALSE) {
          "Verifier la connexion reseau, puis reessayer connexion(). ",
          "Detail : ", conditionMessage(erreur_icu), call. = FALSE)
   }
+  .migrer_schemas_amo(db)
   .connexions$db = db
   .connexions$chemin = chemin
   db

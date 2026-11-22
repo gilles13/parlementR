@@ -36,7 +36,7 @@ reference:
   - cat_deputes
   - fiche_depute
   - rapport_depute
-  - produire_cheatsheet_grid
+  - produire_cheatsheet
   - rapport_legislatif_an
 
 - title: Sénateurs
@@ -54,9 +54,10 @@ reference:
 
 - title: Recherche et documentation des dossiers
   contents:
+  - rech_dosleg
   - rech_dosleg_an
   - cat_dosleg_an
-  - rapport_dosleg_an
+  - rapport_legislatif_an
 
 - title: Questions du Sénat
   contents:

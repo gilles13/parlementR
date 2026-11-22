@@ -15,9 +15,9 @@ cat_missions_gvt = function(date = NULL, db = NULL) {
     if (is.na(date)) stop("Date invalide.", call. = FALSE)
   }
   db = .connexion_valide(db)
-  if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_historique", table = "acteurs")) ||
-      !DBI::dbExistsTable(db, DBI::Id(schema = "an_historique", table = "organes")))
-    stop("Tables an_historique.acteurs/organes absentes : actualiser(jeux = 'historique').",
+  if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_amo30", table = "acteurs")) ||
+      !DBI::dbExistsTable(db, DBI::Id(schema = "an_amo30", table = "organes")))
+    stop("Tables an_amo30.acteurs/organes absentes : actualiser(jeux = 'historique').",
          call. = FALSE)
 
   # organeRef est tantot une chaine, tantot un tableau JSON : les deux
@@ -38,7 +38,7 @@ cat_missions_gvt = function(date = NULL, db = NULL) {
                  THEN json_extract(m.value, '$.organes.organeRef')
                ELSE json_array(m.value ->> '$.organes.organeRef')
              END AS organismes
-      FROM an_historique.acteurs a,
+      FROM an_amo30.acteurs a,
            json_each(a.contenu, '$.acteur.mandats.mandat') m
       WHERE (m.value ->> '$.@xsi:type') = 'MandatMission_Type'
         AND (m.value ->> '$.typeOrgane') = 'MINISTERE'
@@ -51,7 +51,7 @@ cat_missions_gvt = function(date = NULL, db = NULL) {
            o.contenu ->> '$.organe.libelle' AS ministere
     FROM missions m
     LEFT JOIN LATERAL json_each(m.organismes) r ON TRUE
-    LEFT JOIN an_historique.organes o ON o.uid = json_extract_string(r.value, '$')
+    LEFT JOIN an_amo30.organes o ON o.uid = json_extract_string(r.value, '$')
     ORDER BY m.debut DESC, m.mandat_uid, ministere_uid"
   donnees = .db_get_tibble(db, sql)
   if (!is.null(date)) {

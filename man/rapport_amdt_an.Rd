@@ -8,7 +8,7 @@ rapport_amdt_an(
   donnees,
   sujet = NULL,
   sortie = NULL,
-  ouvrir = FALSE,
+  ouvrir = TRUE,
   pdf = TRUE
 )
 }

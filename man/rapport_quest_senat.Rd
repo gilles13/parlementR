@@ -4,7 +4,7 @@
 \alias{rapport_quest_senat}
 \title{Produire une fiche PDF de question et reponses}
 \usage{
-rapport_quest_senat(id, db = NULL, sortie = NULL, ouvrir = FALSE, pdf = TRUE)
+rapport_quest_senat(id, db = NULL, sortie = NULL, ouvrir = TRUE, pdf = TRUE)
 }
 \arguments{
 \item{id}{Identifiant officiel interne.}

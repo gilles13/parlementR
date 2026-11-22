@@ -1,9 +1,9 @@
 # En-tete commun des rapports parlementaires en grid.
-.entete_grid = function(assemblee, sous_titre, logo = 1L) {
+.entete_grid = function(assemblee, sous_titre, logo = 1L, taille_logo = 15) {
   image = .logo_code(logo)
   grid::grid.raster(image,
     x = grid::unit(185, "mm"), y = grid::unit(285, "mm"),
-    width = grid::unit(15, "mm"), height = grid::unit(15, "mm"),
+    width = grid::unit(taille_logo, "mm"), height = grid::unit(taille_logo, "mm"),
     interpolate = TRUE)
   grid::grid.text("parlementR", x = grid::unit(17, "mm"),
     y = grid::unit(288, "mm"), just = "left",

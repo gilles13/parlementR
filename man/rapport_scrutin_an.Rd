@@ -9,7 +9,7 @@ rapport_scrutin_an(
   db = NULL,
   contexte = NULL,
   sortie = NULL,
-  ouvrir = FALSE,
+  ouvrir = TRUE,
   pdf = TRUE,
   amendement_uid = NULL
 )

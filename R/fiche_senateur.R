@@ -51,7 +51,7 @@ fiche_senateur = function(nom, db = NULL) {
   id = .resoudre_senateur(nom, con)
   lire = function(sql) .db_get_tibble(con, sql, params = list(id))
   fiche = list(
-    identite = lire("SELECT senmat, sennomuse, senprenomuse, sendatnai, sendatdec, etasencod, sendespro, sencircou FROM senateurs.sen WHERE senmat = ?"),
+    identite = lire("SELECT senmat, sennomuse, senprenomuse, sendatnai, sendatdec, etasencod, sendespro, sencircou, sendaiurl FROM senateurs.sen WHERE senmat = ?"),
     mandats = lire("SELECT eludatdeb AS debut, eludatfin AS fin, eludatelu AS election, dptnum AS departement, typmancod AS type_mandat, etadebmancod AS debut_motif, etafinmancod AS fin_motif FROM senateurs.elusen WHERE senmat = ? ORDER BY eludatdeb"),
     groupes_politiques = lire("SELECT m.memgrppoldatdeb AS debut, m.memgrppoldatfin AS fin, m.grppolcod AS code, g.grppolliccou AS sigle, g.grppollibcou AS libelle, m.typapppolcod AS type_appartenance FROM senateurs.memgrppol m LEFT JOIN senateurs.grppol g ON m.grppolcod = g.grppolcod WHERE m.senmat = ? ORDER BY m.memgrppoldatdeb NULLS FIRST"),
     fonctions_groupes = lire("SELECT m.grppolcod AS code_groupe, g.grppollibcou AS groupe, fm.fongrppolcod AS code_fonction, f.fongrppollib AS fonction, fm.fonmemgrppoldatdeb AS debut, fm.fonmemgrppoldatfin AS fin FROM senateurs.fonmemgrppol fm JOIN senateurs.memgrppol m ON fm.memgrppolid = m.memgrppolid LEFT JOIN senateurs.grppol g ON m.grppolcod = g.grppolcod LEFT JOIN senateurs.fongrppol f ON fm.fongrppolcod = f.fongrppolcod WHERE m.senmat = ? AND fm.fongrppolcod <> 'MEMBREPOL' ORDER BY fm.fonmemgrppoldatdeb DESC NULLS LAST"),
@@ -69,6 +69,7 @@ fiche_senateur = function(nom, db = NULL) {
 #' @param sortie Chemin du PDF dans /tmp par defaut.
 #' @param ouvrir Ouvrir le PDF produit.
 #' @param db Connexion DuckDB facultative.
+#' @param cache Repertoire de cache des photographies.
 #' @return Chemin du PDF, invisiblement.
 #' @export
 rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL,
@@ -214,6 +215,11 @@ rapport_senateur = function(nom, sortie = NULL, ouvrir = TRUE, db = NULL,
                valeur(id$sendespro, "Inconnu"),
                if (nrow(g)) valeur(g$libelle[nrow(g)], "Inconnu") else "Inconnu"),
     stringsAsFactors = FALSE)
+  # Le lien HATVP est fourni directement par la source officielle du Senat.
+  # Le moteur PDF le place dans le cartouche d'identite.
+  hatvp = valeur(id$sendaiurl, "")
+  if (grepl("^https?://", hatvp))
+    sections[["D\u00e9claration HATVP"]] = hatvp
   photo = file.path(cache, "senat", "photos", paste0(id$senmat, ".jpg"))
   if (!.photo_jpeg(photo)) photo = NULL
   chemin = .pdf_fiche_depute_grid(nom_affiche, identite_table, sections,

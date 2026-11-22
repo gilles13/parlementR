@@ -9,7 +9,7 @@ lire_compte_rendu_an(ref, reunion = NULL)
 \arguments{
 \item{ref}{Reference CRCANR ou URL HTML issue de url_compte_rendu_an().}
 
-\item{reunion}{Ligne facultative de chercher_commissions_an().}
+\item{reunion}{Ligne facultative de rech_comm_an().}
 }
 \value{
 Liste structuree (reference, URL, metadata, HTML et texte).

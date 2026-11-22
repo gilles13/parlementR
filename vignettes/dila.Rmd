@@ -62,7 +62,7 @@ Cette mission rejoint directement l'objectif de `parlementR` : faciliter l'accè
 Une démarche documentaire cohérente consiste à :
 
 1. **Repérer un sujet** avec `rech_dosleg_an()` ou `cat_dosleg_an()`.
-2. **Explorer son dossier** avec `rapport_dosleg_an()` et relever les références officielles.
+2. **Explorer son dossier** avec `rapport_legislatif_an()` et relever les références officielles.
 3. **Vérifier les textes publiés et leur état juridique** sur Légifrance, lorsque la question porte sur le droit en vigueur.
 4. **Compléter le contexte** avec les ressources de Vie-publique.fr ou de Service Public, selon la question posée.
 

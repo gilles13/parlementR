@@ -14,7 +14,7 @@ url_compte_rendu_an = function(ref) {
 #' @param db Connexion DuckDB facultative.
 #' @return Tibble de reunions, avec URL et intervenants mentionnes dans le sujet.
 #' @export
-chercher_commissions_an = function(sujet = NULL, intervenant = NULL, date_debut = NULL, date_fin = NULL, avec_compte_rendu = TRUE, db = NULL) {
+rech_comm_an = function(sujet = NULL, intervenant = NULL, date_debut = NULL, date_fin = NULL, avec_compte_rendu = TRUE, db = NULL) {
   db = .connexion_valide(db)
   if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_reunions", table = "reunions"))) stop("Table an_reunions.reunions absente : actualiser les reunions")
   donnees = DBI::dbGetQuery(db, paste0(
@@ -46,7 +46,7 @@ chercher_commissions_an = function(sujet = NULL, intervenant = NULL, date_debut 
 }
 #' Telecharger et lire un compte rendu de commission
 #' @param ref Reference CRCANR ou URL HTML issue de url_compte_rendu_an().
-#' @param reunion Ligne facultative de chercher_commissions_an().
+#' @param reunion Ligne facultative de rech_comm_an().
 #' @return Liste structuree (reference, URL, metadata, HTML et texte).
 #' @export
 lire_compte_rendu_an = function(ref, reunion = NULL) {
@@ -61,17 +61,35 @@ lire_compte_rendu_an = function(ref, reunion = NULL) {
   if (!nzchar(trimws(texte))) stop("Compte rendu vide")
   lignes = trimws(strsplit(texte, "\n", fixed = TRUE)[[1]])
   lignes = lignes[nzchar(lignes)]
-  # Le titre officiel est extrait du document ; la reference d'organe reste disponible.
-  titre = paste(utils::head(lignes, 6L), collapse = " ")
-  if (nchar(titre) > 350L) titre = substr(titre, 1L, 350L)
-  personnes = unique(unlist(regmatches(texte, gregexpr("(?:M\\.|Mme)\\s+[[:upper:]][[:alpha:]\u00c0-\u00ff'\u2019 -]{2,65}", texte, perl = TRUE))))
-  personnes = trimws(personnes)
-  personnes = personnes[nzchar(personnes)]
+  # Les premieres lignes du compte rendu contiennent le nom de la commission,
+  # la date et le numero de seance. Ne pas confondre l'intitule et le sommaire.
+  debut = paste(utils::head(lignes, 35L), collapse = " ")
+  debut = gsub("[[:space:]]+", " ", debut)
+  nom = sub("^.*?(Commission (?:d[\u2019']enqu\u00eate|des? |permanente|sp\u00e9ciale)[^\u2026]+?)(?:[\u2026]{2,}|[\u2013-] Audition|[\u2013-] Pr\u00e9sences|Samedi |Lundi |Mardi |Mercredi |Jeudi |Vendredi |Dimanche ).*$", "\\1", debut, perl = TRUE)
+  if (identical(nom, debut)) {
+    candidats = lignes[grepl("^Commission ", lignes)]
+    nom = if (length(candidats)) candidats[1] else "Commission de l'Assembl\u00e9e nationale"
+  }
+  nom = trimws(gsub("[\u2026]+$", "", nom))
+  date_texte = regmatches(debut, regexpr("[0-3]?[0-9] (?:janvier|f\u00e9vrier|mars|avril|mai|juin|juillet|ao\u00fbt|septembre|octobre|novembre|d\u00e9cembre) 20[0-9]{2}", debut, perl = TRUE))
+  mois = c("janvier", "f\u00e9vrier", "mars", "avril", "mai", "juin", "juillet", "ao\u00fbt", "septembre", "octobre", "novembre", "d\u00e9cembre")
+  date_document = as.Date(NA)
+  if (length(date_texte) && nzchar(date_texte)) {
+    morceaux = strsplit(date_texte, " ", fixed = TRUE)[[1]]
+    date_document = as.Date(sprintf("%s-%02d-%02d", morceaux[3], match(morceaux[2], mois), as.integer(morceaux[1])))
+  }
+  date_reunion = if (!is.null(reunion) && "date" %in% names(reunion)) as.Date(reunion$date[1]) else as.Date(NA)
+  numero = regmatches(debut, regexpr("Compte rendu n[\u00b0o]?[[:space:]]*[0-9]+", debut, perl = TRUE, ignore.case = TRUE))
+  objet = regmatches(debut, regexpr("Audition[^\u2026]+", debut, perl = TRUE))
+  objet = if (length(objet)) trimws(sub("[\u2026].*$", "", objet)) else NA_character_
   list(reference = sub("\\.html$", "", basename(url)), url = url,
-       date = if (!is.null(reunion) && "date" %in% names(reunion)) as.Date(reunion$date[1]) else as.Date(NA),
+       date = if (!is.na(date_reunion)) date_reunion else date_document,
        commission_ref = if (!is.null(reunion) && "commission_ref" %in% names(reunion)) reunion$commission_ref[1] else NA_character_,
        sujet = if (!is.null(reunion) && "sujet" %in% names(reunion)) reunion$sujet[1] else NA_character_,
-       titre = titre, intervenants_mentions = personnes, html = page, texte = texte)
+       titre = nom, objet = objet,
+       numero = if (length(numero)) numero else NA_character_,
+       html = page, texte = texte)
+
 }
 #' Frequences lexicales d'un compte rendu de commission
 #' @param cr Objet issu de lire_compte_rendu_an().
@@ -105,26 +123,27 @@ nuage_compte_rendu_an = function(mots, n = 100L) {
     ggplot2::theme_void() +
     ggplot2::theme(legend.position = "none")
 }
-#' Produire un PDF du compte rendu avec nuage de mots
-#' @param cr Objet issu de lire_compte_rendu_an().
-#' @param fichier Chemin du PDF de sortie.
-#' @param exclusions Mots supplementaires a exclure.
-#' @param n Nombre de mots dans le nuage.
+#' Produire un compte rendu de commission en PDF (grid et Cairo)
+#' @param cr Reference CRCANR, ligne de rech_comm_an(), ou objet de lire_compte_rendu_an().
+#' @param fichier Chemin facultatif (par defaut /tmp/parlementR-commission-an-REFERENCE.pdf).
+#' @param ouvrir Ouvrir le PDF apres generation.
+#' @param exclusions,n Arguments historiques conserves pour compatibilite.
 #' @return Chemin du PDF (invisible).
 #' @export
-rapport_compte_rendu_an = function(cr, fichier = file.path(tempdir(), paste0(cr$reference, ".pdf")), exclusions = character(), n = 100L, ouvrir = TRUE) {
-  if (!requireNamespace("rmarkdown", quietly = TRUE) || !requireNamespace("knitr", quietly = TRUE)) stop("Installer 'rmarkdown' et 'knitr'")
-  mots = mots_compte_rendu_an(cr, exclusions = exclusions)
-  if (!nrow(mots)) stop("Aucun mot apres filtrage")
-  modele = system.file("modeles", "compte_rendu_an.Rmd", package = "parlementR")
-  if (!nzchar(modele)) modele = "inst/modeles/compte_rendu_an.Rmd"
-  if (!file.exists(modele)) stop("Modele PDF compte rendu introuvable")
-  dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
-  resultat = rmarkdown::render(modele, output_file = basename(fichier),
-    output_dir = normalizePath(dirname(fichier), mustWork = TRUE),
-    params = list(cr = cr, mots = mots, n = n), quiet = TRUE,
-    envir = new.env(parent = globalenv()))
-  chemin = normalizePath(resultat, mustWork = TRUE)
-  .ouvrir_pdf(chemin, ouvrir)
-  invisible(chemin)
+rapport_comm_an = function(cr, fichier = NULL, exclusions = character(), n = 100L, ouvrir = TRUE) {
+  if (is.data.frame(cr)) {
+    if (nrow(cr) != 1L || !"compte_rendu" %in% names(cr))
+      stop("Fournir une seule ligne avec la colonne compte_rendu")
+    cr = lire_compte_rendu_an(cr$compte_rendu[1], reunion = cr)
+  } else if (is.character(cr) && length(cr) == 1L) {
+    cr = lire_compte_rendu_an(cr)
+  }
+  if (!is.list(cr) || is.null(cr$reference) || is.null(cr$texte))
+    stop("Compte rendu invalide")
+  ref = cr$reference
+  if (length(ref) != 1L || is.na(ref) || !grepl("^CRCANR[[:alnum:]]+$", ref))
+    stop("Reference CRCANR invalide")
+  if (is.null(fichier)) fichier = file.path("/tmp", paste0("parlementR-commission-an-", ref, ".pdf"))
+  .pdf_compte_rendu_an_grid(cr, fichier)
+  .ouvrir_pdf(normalizePath(fichier, mustWork = TRUE), ouvrir)
 }

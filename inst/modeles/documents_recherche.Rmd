@@ -180,7 +180,7 @@ if (identical(d$type, "documents")) {
           numero = sub("[[:space:]].*$", "", numero)
           numero = sub("[^0-9].*$", "", numero)
           url = paste0("https://www.senat.fr/amendements/",
-            if (commission) "commissions/" else "", annee, "-", annee + 1L,
+            if (commission) "commissions/" else "", annee, "-", as.integer(annee) + 1L,
             "/", texte, "/Amdt_", numero, ".html")
         }
       }

@@ -2,30 +2,31 @@
 % Please edit documentation in R/rapport_legislatif_an.R
 \name{rapport_legislatif_an}
 \alias{rapport_legislatif_an}
-\title{Rapport legislatif thematique, construit exclusivement depuis DuckDB}
+\title{Rapport du parcours legislatif d'un dossier de l'Assemblee nationale}
 \usage{
 rapport_legislatif_an(
-  db = NULL,
-  sujet = NULL,
+  ref,
+  ouvrir = TRUE,
   fichier = NULL,
-  limite = 20L,
-  pdf = TRUE
+  pdf = TRUE,
+  db = NULL
 )
 }
 \arguments{
-\item{db}{Connexion DBI facultative ; NULL utilise connexion().}
+\item{ref}{UID officiel du dossier legislatif.}
 
-\item{sujet}{Expression recherchee dans les titres des dossiers.}
+\item{ouvrir}{Ouvrir le PDF apres sa production (TRUE par defaut).}
 
-\item{fichier}{PDF de sortie, par defaut dans le repertoire temporaire.}
+\item{fichier}{Chemin du PDF, dans /tmp par defaut.}
 
-\item{limite}{Nombre maximum de dossiers dans le rapport.}
+\item{pdf}{Si FALSE, renvoyer les donnees sans produire de PDF.}
 
-\item{pdf}{Si FALSE, renvoie les donnees sans produire de PDF.}
+\item{db}{Connexion DuckDB facultative ; NULL utilise connexion().}
 }
 \value{
-Chemin du PDF (invisible) ou liste de tables si pdf = FALSE.
+Chemin du PDF (invisible), ou liste de tables si pdf = FALSE.
 }
 \description{
-Rapport legislatif thematique, construit exclusivement depuis DuckDB
+Restitue les etapes et evenements hierarchises, puis les documents lies.
+Les relations sont exclusivement celles de la base locale.
 }

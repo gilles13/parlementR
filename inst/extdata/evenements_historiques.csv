@@ -1,0 +1,205 @@
+"id";"nom";"date_debut";"date_fin";"precision_debut";"precision_fin";"categorie";"categories";"portee";"territoire";"description";"source";"verification";"note"
+"EVE0001";"Abolition de la monarchie et proclamation de la République";"1792-09-21";"1792-09-22";"jour";"jour";"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0002";"Exécution de Louis XVI";"1793-01-21";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0003";"Guerre de Vendée";"1793-03-01";"1796-03-01";"mois";"mois";"guerre";"guerre;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0004";"Terreur révolutionnaire";"1793-06-02";"1794-07-27";"jour";"jour";"politique";"politique;violence";"France";"France";;;"a_verifier";
+"EVE0005";"Levée en masse";"1793-08-23";;"jour";;"guerre";"guerre;societe";"France";"France";;;"a_verifier";
+"EVE0006";"Chute de Robespierre (9 Thermidor)";"1794-07-27";"1794-07-28";"jour";"jour";"politique";"politique";"France";"France";;;"a_verifier";
+"EVE0007";"Constitution de l'an III";"1795-08-22";;"jour";;"institutions";"institutions;politique";"France";"France";;;"a_verifier";
+"EVE0008";"Installation du Directoire";"1795-10-26";;"jour";;"institutions";"institutions;politique";"France";"France";;;"a_verifier";
+"EVE0009";"Expédition d'Égypte";"1798-05-19";"1801-08-31";"jour";"jour";"guerre";"guerre;colonisation";"Internationale";"France;Égypte";;;"a_verifier";
+"EVE0010";"Coup d'État du 18 Brumaire";"1799-11-09";"1799-11-10";"jour";"jour";"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0011";"Concordat de 1801";"1801-07-15";;"jour";;"religion";"religion;institutions";"France";"France";;;"a_verifier";
+"EVE0012";"Rétablissement de l'esclavage par Bonaparte";"1802-05-20";;"jour";;"esclavage";"esclavage;colonisation;politique";"Internationale";"France;colonies";;;"a_verifier";
+"EVE0013";"Promulgation du Code civil";"1804-03-21";;"jour";;"droit";"droit;institutions";"France";"France";;;"a_verifier";
+"EVE0014";"Proclamation du Premier Empire";"1804-05-18";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0015";"Sacre de Napoléon Ier";"1804-12-02";;"jour";;"politique";"politique";"France";"France";;;"a_verifier";
+"EVE0016";"Bataille de Trafalgar";"1805-10-21";;"jour";;"guerre";"guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0017";"Bataille d'Austerlitz";"1805-12-02";;"jour";;"guerre";"guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0018";"Décret du blocus continental";"1806-11-21";;"jour";;"economie";"economie;guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0019";"Bataille d'Eylau";"1807-02-07";"1807-02-09";"jour";"jour";"guerre";"guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0020";"Guerre d'indépendance espagnole";"1808-05-02";"1814-04-17";"jour";"jour";"guerre";"guerre";"Internationale";"Espagne";;;"a_verifier";
+"EVE0021";"Campagne de Russie";"1812-06-24";"1812-12-14";"jour";"jour";"guerre";"guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0022";"Première abdication de Napoléon Ier";"1814-04-06";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0023";"Charte constitutionnelle de 1814";"1814-06-04";;"jour";;"droit";"droit;institutions";"France";"France";;;"a_verifier";
+"EVE0024";"Cent-Jours";"1815-03-20";"1815-07-08";"jour";"jour";"politique";"politique;guerre";"France";"France";;;"a_verifier";
+"EVE0025";"Bataille de Waterloo";"1815-06-18";;"jour";;"guerre";"guerre";"Internationale";"Belgique";;;"a_verifier";
+"EVE0026";"Création de la Sainte-Alliance";"1815-09-26";;"jour";;"diplomatie";"diplomatie";"Internationale";"Europe";;;"a_verifier";
+"EVE0027";"Crise de subsistance et disette de 1816-1817";"1816-01-01";"1817-12-31";"annee";"annee";"famine";"famine;climat;economie";"Internationale";"France;Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0028";"Année sans été après l'éruption du Tambora";"1816-01-01";"1816-12-31";"annee";"annee";"climat";"climat;catastrophe";"Internationale";"Monde;Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0029";"Guerre d'indépendance grecque";"1821-03-25";"1829-09-14";"jour";"jour";"guerre";"guerre;diplomatie";"Internationale";"Grèce;Europe";;;"a_verifier";
+"EVE0030";"Crise financière de 1825";"1825-01-01";"1825-12-31";"annee";"annee";"finance";"finance;economie";"Internationale";"Royaume-Uni;Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0031";"Révolution des Trois Glorieuses";"1830-07-27";"1830-07-29";"jour";"jour";"politique";"politique;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0032";"Débarquement français et prise d'Alger";"1830-06-14";"1830-07-05";"jour";"jour";"colonisation";"colonisation;guerre";"Internationale";"Algérie;France";;;"a_verifier";
+"EVE0033";"Première révolte des canuts";"1831-11-21";"1831-12-03";"jour";"jour";"social";"social;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0034";"Épidémie de choléra de 1832";"1832-03-01";"1832-12-31";"mois";"annee";"sante";"sante;epidemie";"Internationale";"France;Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0035";"Seconde révolte des canuts";"1834-04-09";"1834-04-15";"jour";"jour";"social";"social;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0036";"Grande famine irlandaise";"1845-01-01";"1852-12-31";"annee";"annee";"famine";"famine;demographie";"Internationale";"Irlande;Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0037";"Crise agricole et alimentaire de 1846-1847";"1846-01-01";"1847-12-31";"annee";"annee";"famine";"famine;economie;social";"Internationale";"France;Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0038";"Révolution de Février 1848";"1848-02-22";"1848-02-24";"jour";"jour";"politique";"politique;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0039";"Décret limitant la journée de travail";"1848-03-02";;"jour";;"social";"social;droit";"France";"France";;;"a_verifier";
+"EVE0040";"Décret d'abolition de l'esclavage";"1848-04-27";;"jour";;"esclavage";"esclavage;droit;colonisation";"Internationale";"France;colonies";;;"a_verifier";
+"EVE0041";"Journées de Juin 1848";"1848-06-23";"1848-06-26";"jour";"jour";"social";"social;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0042";"Constitution de la Deuxième République";"1848-11-04";;"jour";;"institutions";"institutions;droit";"France";"France";;;"a_verifier";
+"EVE0043";"Élection de Louis-Napoléon Bonaparte";"1848-12-10";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0044";"Épidémie de choléra de 1849";"1849-01-01";"1849-12-31";"annee";"annee";"sante";"sante;epidemie";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0045";"Coup d'État de Louis-Napoléon Bonaparte";"1851-12-02";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0046";"Proclamation du Second Empire";"1852-12-02";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0047";"Guerre de Crimée";"1853-10-01";"1856-03-30";"mois";"jour";"guerre";"guerre;diplomatie";"Internationale";"Europe";;;"a_verifier";
+"EVE0048";"Transformation de Paris sous Haussmann";"1854-01-01";"1869-12-31";"annee";"annee";"urbanisme";"urbanisme;societe";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0049";"Campagne d'Italie de 1859";"1859-04-29";"1859-07-12";"jour";"jour";"guerre";"guerre;diplomatie";"Internationale";"Italie;France";;;"a_verifier";
+"EVE0050";"Guerre de Sécession américaine";"1861-04-12";"1865-04-09";"jour";"jour";"guerre";"guerre;esclavage";"Internationale";"États-Unis";;;"a_verifier";
+"EVE0051";"Intervention française au Mexique";"1862-01-01";"1867-12-31";"annee";"annee";"guerre";"guerre;colonisation";"Internationale";"Mexique;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0052";"Loi Ollivier reconnaissant le droit de grève";"1864-05-25";;"jour";;"social";"social;droit";"France";"France";;;"a_verifier";
+"EVE0053";"Crise financière de 1866";"1866-01-01";"1866-12-31";"annee";"annee";"finance";"finance;economie";"Internationale";"Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0054";"Ouverture du canal de Suez";"1869-11-17";;"jour";;"transport";"transport;economie";"Internationale";"Égypte;Monde";;;"a_verifier";
+"EVE0055";"Guerre franco-prussienne";"1870-07-19";"1871-05-10";"jour";"jour";"guerre";"guerre";"Internationale";"France;Allemagne";;;"a_verifier";
+"EVE0056";"Défaite de Sedan";"1870-09-02";;"jour";;"guerre";"guerre;politique";"France";"France";;;"a_verifier";
+"EVE0057";"Proclamation de la Troisième République";"1870-09-04";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0058";"Commune de Paris";"1871-03-18";"1871-05-28";"jour";"jour";"conflit_interieur";"conflit_interieur;social;politique";"France";"France";;;"a_verifier";
+"EVE0059";"Traité de Francfort";"1871-05-10";;"jour";;"diplomatie";"diplomatie;guerre";"Internationale";"France;Allemagne";;;"a_verifier";
+"EVE0060";"Krach boursier de Vienne et crise de 1873";"1873-05-09";;"jour";;"finance";"finance;economie";"Internationale";"Europe;Monde";;;"a_verifier";
+"EVE0061";"Lois constitutionnelles de 1875";"1875-02-24";"1875-07-16";"jour";"jour";"institutions";"institutions;droit";"France";"France";;;"a_verifier";
+"EVE0062";"Crise du phylloxéra et reconstitution du vignoble";"1879-01-01";"1880-12-31";"annee";"annee";"agriculture";"agriculture;economie";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0063";"Loi sur la gratuité de l'enseignement primaire";"1881-06-16";;"jour";;"education";"education;droit";"France";"France";;;"a_verifier";
+"EVE0064";"Loi sur la liberté de la presse";"1881-07-29";;"jour";;"droit";"droit;politique";"France";"France";;;"a_verifier";
+"EVE0065";"Loi sur l'enseignement primaire obligatoire et laïque";"1882-03-28";;"jour";;"education";"education;droit";"France";"France";;;"a_verifier";
+"EVE0066";"Loi Waldeck-Rousseau autorisant les syndicats";"1884-03-21";;"jour";;"social";"social;droit";"France";"France";;;"a_verifier";
+"EVE0067";"Conférence de Berlin et partage colonial de l'Afrique";"1884-11-15";"1885-02-26";"jour";"jour";"colonisation";"colonisation;diplomatie";"Internationale";"Afrique;Europe";;;"a_verifier";
+"EVE0068";"Pandémie de grippe dite russe";"1889-01-01";"1890-12-31";"annee";"annee";"sante";"sante;epidemie";"Internationale";"Monde";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0069";"Scandale de Panama";"1892-01-01";"1892-12-31";"annee";"annee";"politique";"politique;finance";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0070";"Affaire Dreyfus";"1894-10-15";"1906-07-12";"jour";"jour";"justice";"justice;politique;societe";"France";"France";;;"a_verifier";
+"EVE0071";"Première séance publique payante du cinématographe Lumière";"1895-12-28";;"jour";;"culture";"culture;science_technique";"France";"France";;;"a_verifier";
+"EVE0072";"Publication de J'accuse… !";"1898-01-13";;"jour";;"justice";"justice;politique;culture";"France";"France";;;"a_verifier";
+"EVE0073";"Exposition universelle de Paris";"1900-04-14";"1900-11-12";"jour";"jour";"culture";"culture;science_technique";"France";"France";;;"a_verifier";
+"EVE0074";"Loi relative au contrat d'association";"1901-07-01";;"mois";;"droit";"droit;societe";"France";"France";;;"a_verifier";
+"EVE0075";"Loi de séparation des Églises et de l'État";"1905-12-09";;"jour";;"religion";"religion;droit;institutions";"France";"France";;;"a_verifier";
+"EVE0076";"Catastrophe minière de Courrières";"1906-03-10";;"jour";;"catastrophe";"catastrophe;social";"France";"France";;;"a_verifier";
+"EVE0077";"Révolte des vignerons du Midi";"1907-06-09";"1907-06-23";"jour";"jour";"agriculture";"agriculture;social";"France";"France";;;"a_verifier";
+"EVE0078";"Grande crue de la Seine";"1910-01-18";"1910-03-08";"jour";"jour";"catastrophe";"catastrophe;climat";"France";"France";;;"a_verifier";
+"EVE0079";"Traité de Fès établissant le protectorat français au Maroc";"1912-03-30";;"jour";;"colonisation";"colonisation;diplomatie";"Internationale";"Maroc;France";;;"a_verifier";
+"EVE0080";"Première Guerre mondiale";"1914-07-28";"1918-11-11";"jour";"jour";"guerre";"guerre;diplomatie";"Internationale";"Europe;Monde";;;"a_verifier";
+"EVE0081";"Bataille de Verdun";"1916-02-21";"1916-12-18";"jour";"jour";"guerre";"guerre";"France";"France";;;"a_verifier";
+"EVE0082";"Offensive du Chemin des Dames";"1917-04-16";"1917-05-09";"jour";"jour";"guerre";"guerre";"France";"France";;;"a_verifier";
+"EVE0083";"Révolution russe et guerre civile";"1917-01-01";"1923-12-31";"annee";"annee";"politique";"politique;guerre";"Internationale";"Russie";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0084";"Pandémie de grippe espagnole";"1918-01-01";"1920-12-31";"annee";"annee";"sante";"sante;epidemie;demographie";"Internationale";"Monde;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0085";"Traité de Versailles";"1919-06-28";;"jour";;"diplomatie";"diplomatie;guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0086";"Congrès de Tours et naissance du PCF";"1920-12-25";"1920-12-30";"jour";"jour";"politique";"politique;social";"France";"France";;;"a_verifier";
+"EVE0087";"Occupation de la Ruhr";"1923-01-11";"1925-08-25";"jour";"jour";"guerre";"guerre;diplomatie;economie";"Internationale";"Allemagne;France";;;"a_verifier";
+"EVE0088";"Crise du franc et stabilisation monétaire";"1924-01-01";"1924-12-31";"annee";"annee";"finance";"finance;economie";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0089";"Krach de Wall Street et Grande Dépression";"1929-10-24";"1933-12-31";"jour";"annee";"finance";"finance;economie;social";"Internationale";"Monde;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0090";"Ouverture de l'Exposition coloniale internationale";"1931-05-06";;"jour";;"colonisation";"colonisation;culture";"France";"France";;;"a_verifier";
+"EVE0091";"Émeutes du 6 février 1934";"1934-02-06";;"jour";;"politique";"politique;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0092";"Victoire électorale du Front populaire";"1936-05-03";;"jour";;"politique";"politique;social";"France";"France";;;"a_verifier";
+"EVE0093";"Accords de Matignon";"1936-06-07";;"jour";;"social";"social;droit";"France";"France";;;"a_verifier";
+"EVE0094";"Loi sur les congés payés";"1936-06-20";;"jour";;"social";"social;droit";"France";"France";;;"a_verifier";
+"EVE0095";"Guerre civile espagnole";"1936-07-17";"1939-04-01";"jour";"mois";"guerre";"guerre;politique";"Internationale";"Espagne;Europe";;;"a_verifier";
+"EVE0096";"Accords de Munich";"1938-09-30";;"jour";;"diplomatie";"diplomatie;guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0097";"Seconde Guerre mondiale";"1939-09-01";"1945-09-02";"mois";"jour";"guerre";"guerre;diplomatie";"Internationale";"Monde;France";;;"a_verifier";
+"EVE0098";"Bataille de France";"1940-05-10";"1940-06-22";"jour";"jour";"guerre";"guerre";"France";"France";;;"a_verifier";
+"EVE0099";"Appel du 18 Juin";"1940-06-18";;"jour";;"guerre";"guerre;politique";"France";"France";;;"a_verifier";
+"EVE0100";"Vote des pleins pouvoirs à Pétain";"1940-07-10";;"jour";;"institutions";"institutions;politique";"France";"France";;;"a_verifier";
+"EVE0101";"Premier statut des Juifs du régime de Vichy";"1940-10-03";;"jour";;"persecution";"persecution;droit;politique";"France";"France";;;"a_verifier";
+"EVE0102";"Rafle du Vélodrome d'Hiver";"1942-07-16";"1942-07-17";"jour";"jour";"persecution";"persecution;guerre";"France";"France";;;"a_verifier";
+"EVE0103";"Occupation de la zone libre";"1942-11-11";;"jour";;"guerre";"guerre";"France";"France";;;"a_verifier";
+"EVE0104";"Première réunion du Conseil national de la Résistance";"1943-05-27";;"jour";;"politique";"politique;guerre";"France";"France";;;"a_verifier";
+"EVE0105";"Débarquement de Normandie";"1944-06-06";;"jour";;"guerre";"guerre";"France";"France";;;"a_verifier";
+"EVE0106";"Libération de Paris";"1944-08-25";;"jour";;"guerre";"guerre;politique";"France";"France";;;"a_verifier";
+"EVE0107";"Ordonnance accordant le droit de vote aux femmes";"1944-04-21";;"jour";;"droit";"droit;social;politique";"France";"France";;;"a_verifier";
+"EVE0108";"Victoire des Alliés en Europe";"1945-05-08";;"jour";;"guerre";"guerre";"Internationale";"Europe";;;"a_verifier";
+"EVE0109";"Bombardements atomiques d'Hiroshima et Nagasaki";"1945-08-06";"1945-08-09";"jour";"jour";"guerre";"guerre;science_technique";"Internationale";"Japon";;;"a_verifier";
+"EVE0110";"Ordonnances fondatrices de la Sécurité sociale";"1945-10-04";"1945-10-19";"jour";"jour";"social";"social;droit;sante";"France";"France";;;"a_verifier";
+"EVE0111";"Entrée en vigueur de la Charte des Nations unies";"1945-10-24";;"jour";;"diplomatie";"diplomatie;institutions";"Internationale";"Monde";;;"a_verifier";
+"EVE0112";"Constitution de la Quatrième République";"1946-10-27";;"jour";;"institutions";"institutions;droit";"France";"France";;;"a_verifier";
+"EVE0113";"Guerre d'Indochine";"1946-11-01";"1954-08-01";"mois";"mois";"guerre";"guerre;decolonisation";"Internationale";"Indochine;France";;;"a_verifier";
+"EVE0114";"Guerre froide";"1947-01-01";"1991-12-26";"annee";"jour";"diplomatie";"diplomatie;guerre";"Internationale";"Monde";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0115";"Grandes grèves de 1947-1948";"1947-01-01";"1948-12-31";"annee";"annee";"social";"social;economie";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0116";"Déclaration universelle des droits de l'homme";"1948-12-10";;"jour";;"droit";"droit;diplomatie";"Internationale";"Monde";;;"a_verifier";
+"EVE0117";"Création de l'OTAN";"1949-04-04";;"jour";;"diplomatie";"diplomatie;guerre";"Internationale";"Europe;Amérique du Nord";;;"a_verifier";
+"EVE0118";"Déclaration Schuman";"1950-05-09";;"jour";;"europe";"europe;diplomatie";"Internationale";"Europe;France";;;"a_verifier";
+"EVE0119";"Traité de Paris instituant la CECA";"1951-04-18";;"jour";;"europe";"europe;economie";"Internationale";"Europe";;;"a_verifier";
+"EVE0120";"Défaite française de Diên Biên Phu";"1954-05-07";;"jour";;"guerre";"guerre;decolonisation";"Internationale";"Viêt Nam;France";;;"a_verifier";
+"EVE0121";"Guerre d'Algérie";"1954-11-01";"1962-03-19";"mois";"jour";"guerre";"guerre;decolonisation";"Internationale";"Algérie;France";;;"a_verifier";
+"EVE0122";"Crise du canal de Suez";"1956-10-29";"1956-11-07";"jour";"jour";"guerre";"guerre;diplomatie";"Internationale";"Égypte;Europe";;;"a_verifier";
+"EVE0123";"Signature des traités de Rome";"1957-03-25";;"jour";;"europe";"europe;economie";"Internationale";"Europe";;;"a_verifier";
+"EVE0124";"Crise de mai 1958";"1958-05-13";"1958-06-01";"jour";"mois";"politique";"politique;institutions";"Internationale";"France;Algérie";;;"a_verifier";
+"EVE0125";"Promulgation de la Constitution de la Cinquième République";"1958-10-04";;"jour";;"institutions";"institutions;droit";"France";"France";;;"a_verifier";
+"EVE0126";"Construction du mur de Berlin";"1961-08-13";;"jour";;"diplomatie";"diplomatie;guerre";"Internationale";"Allemagne;Europe";;;"a_verifier";
+"EVE0127";"Répression de la manifestation algérienne à Paris";"1961-10-17";;"jour";;"decolonisation";"decolonisation;violence;politique";"France";"France";;;"a_verifier";
+"EVE0128";"Accords d'Évian";"1962-03-18";;"jour";;"decolonisation";"decolonisation;diplomatie";"Internationale";"Algérie;France";;;"a_verifier";
+"EVE0129";"Crise des missiles de Cuba";"1962-10-16";"1962-10-28";"jour";"jour";"diplomatie";"diplomatie;guerre";"Internationale";"Cuba;Monde";;;"a_verifier";
+"EVE0130";"Référendum sur l'élection du président au suffrage universel direct";"1962-10-28";;"jour";;"institutions";"institutions;politique";"France";"France";;;"a_verifier";
+"EVE0131";"Traité de l'Élysée";"1963-01-22";;"jour";;"diplomatie";"diplomatie;europe";"Internationale";"France;Allemagne";;;"a_verifier";
+"EVE0132";"Première élection présidentielle au suffrage universel direct de la Ve République";"1965-12-05";"1965-12-19";"jour";"jour";"institutions";"institutions;politique";"France";"France";;;"a_verifier";
+"EVE0133";"Crise économique et chômage à la fin des Trente Glorieuses";"1967-01-01";"1967-12-31";"annee";"annee";"economie";"economie;social";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0134";"Mai 68 : manifestations et grèves";"1968-05-03";"1968-06-30";"jour";"jour";"social";"social;politique;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0135";"Accords de Grenelle";"1968-05-27";;"jour";;"social";"social;droit";"France";"France";;;"a_verifier";
+"EVE0136";"Premier pas humain sur la Lune";"1969-07-20";;"jour";;"science_technique";"science_technique";"Internationale";"Monde";;;"a_verifier";
+"EVE0137";"Décision du Conseil constitutionnel sur la liberté d'association";"1971-07-16";;"jour";;"droit";"droit;institutions";"France";"France";;;"a_verifier";
+"EVE0138";"Premier choc pétrolier";"1973-10-06";"1974-03-31";"jour";"jour";"energie";"energie;economie;geopolitique";"Internationale";"Monde;France";;;"a_verifier";
+"EVE0139";"Abaissement de la majorité civile à 18 ans";"1974-07-05";;"jour";;"droit";"droit;societe";"France";"France";;;"a_verifier";
+"EVE0140";"Loi Veil relative à l'IVG";"1975-01-17";;"jour";;"sante";"sante;droit;societe";"France";"France";;;"a_verifier";
+"EVE0141";"Chute de Saïgon et fin de la guerre du Viêt Nam";"1975-04-30";;"jour";;"guerre";"guerre;decolonisation";"Internationale";"Viêt Nam;Monde";;;"a_verifier";
+"EVE0142";"Catastrophe de Seveso";"1976-07-10";;"jour";;"catastrophe";"catastrophe;environnement";"Internationale";"Italie;Europe";;;"a_verifier";
+"EVE0143";"Deuxième choc pétrolier";"1979-01-01";"1980-12-31";"annee";"annee";"energie";"energie;economie;geopolitique";"Internationale";"Monde;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0144";"Accident nucléaire de Three Mile Island";"1979-03-28";;"jour";;"catastrophe";"catastrophe;energie";"Internationale";"États-Unis";;;"a_verifier";
+"EVE0145";"Guerre d'Afghanistan (intervention soviétique)";"1979-12-24";"1989-02-15";"jour";"jour";"guerre";"guerre;diplomatie";"Internationale";"Afghanistan;Monde";;;"a_verifier";
+"EVE0146";"Élection de François Mitterrand";"1981-05-10";;"jour";;"politique";"politique";"France";"France";;;"a_verifier";
+"EVE0147";"Abolition de la peine de mort";"1981-10-09";;"jour";;"droit";"droit;justice";"France";"France";;;"a_verifier";
+"EVE0148";"Première loi de décentralisation";"1982-03-02";;"jour";;"institutions";"institutions;droit";"France";"France";;;"a_verifier";
+"EVE0149";"Tournant de la rigueur";"1983-03-01";"1983-03-31";"mois";"jour";"economie";"economie;politique";"France";"France";;;"a_verifier";
+"EVE0150";"Catastrophe industrielle de Bhopal";"1984-12-03";;"jour";;"catastrophe";"catastrophe;environnement";"Internationale";"Inde";;;"a_verifier";
+"EVE0151";"Crise de la dette des pays en développement";"1985-01-01";"1985-12-31";"annee";"annee";"finance";"finance;economie";"Internationale";"Monde";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0152";"Catastrophe nucléaire de Tchernobyl";"1986-04-26";;"jour";;"catastrophe";"catastrophe;energie;environnement";"Internationale";"Ukraine;Europe";;;"a_verifier";
+"EVE0153";"Krach boursier d'octobre 1987";"1987-10-19";;"jour";;"finance";"finance;economie";"Internationale";"Monde";;;"a_verifier";
+"EVE0154";"Chute du mur de Berlin";"1989-11-09";;"jour";;"politique";"politique;diplomatie";"Internationale";"Allemagne;Europe";;;"a_verifier";
+"EVE0155";"Guerre du Golfe";"1990-08-02";"1991-02-28";"jour";"jour";"guerre";"guerre;energie;geopolitique";"Internationale";"Moyen-Orient";;;"a_verifier";
+"EVE0156";"Dissolution de l'Union soviétique";"1991-12-26";;"jour";;"politique";"politique;diplomatie";"Internationale";"Europe;Asie";;;"a_verifier";
+"EVE0157";"Signature du traité de Maastricht";"1992-02-07";;"jour";;"europe";"europe;institutions";"Internationale";"Europe";;;"a_verifier";
+"EVE0158";"Crise du Système monétaire européen";"1992-09-16";;"jour";;"finance";"finance;economie;europe";"Internationale";"Europe";;;"a_verifier";
+"EVE0159";"Génocide des Tutsi au Rwanda";"1994-04-07";"1994-07-15";"jour";"jour";"guerre";"guerre;persecution";"Internationale";"Rwanda";;;"a_verifier";
+"EVE0160";"Grèves de novembre-décembre 1995";"1995-11-24";"1995-12-15";"jour";"jour";"social";"social;politique";"France";"France";;;"a_verifier";
+"EVE0161";"Crise financière asiatique";"1997-07-02";"1998-12-31";"jour";"annee";"finance";"finance;economie";"Internationale";"Asie;Monde";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0162";"Victoire de la France à la Coupe du monde de football";"1998-07-12";;"jour";;"sport";"sport;culture";"France";"France";;;"a_verifier";
+"EVE0163";"Lancement de l'euro comme monnaie scripturale";"1999-01-01";;"annee";;"europe";"europe;finance";"Internationale";"Europe";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0164";"Tempêtes Lothar et Martin";"1999-12-27";;"jour";;"catastrophe";"catastrophe;climat";"Internationale";"France;Europe";;;"a_verifier";
+"EVE0165";"Référendum sur le quinquennat présidentiel";"2000-09-24";;"jour";;"institutions";"institutions;politique";"France";"France";;;"a_verifier";
+"EVE0166";"Attentats du 11 septembre";"2001-09-11";;"jour";;"terrorisme";"terrorisme;geopolitique";"Internationale";"États-Unis;Monde";;;"a_verifier";
+"EVE0167";"Mise en circulation des billets et pièces en euros";"2002-01-01";;"annee";;"europe";"europe;finance";"Internationale";"Europe;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0168";"Guerre d'Irak";"2003-03-20";"2011-12-18";"jour";"jour";"guerre";"guerre;geopolitique";"Internationale";"Irak;Monde";;;"a_verifier";
+"EVE0169";"Canicule européenne de 2003";"2003-08-01";"2003-08-20";"mois";"jour";"climat";"climat;catastrophe;sante";"Internationale";"France;Europe";;;"a_verifier";
+"EVE0170";"Tsunami dans l'océan Indien";"2004-12-26";;"jour";;"catastrophe";"catastrophe;climat";"Internationale";"Asie;Océan Indien";;;"a_verifier";
+"EVE0171";"Rejet français du traité constitutionnel européen";"2005-05-29";;"jour";;"europe";"europe;politique";"France";"France";;;"a_verifier";
+"EVE0172";"Émeutes urbaines de 2005";"2005-10-27";"2005-11-17";"jour";"jour";"social";"social;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0173";"Crise des subprimes et crise financière mondiale";"2007-08-01";"2009-06-30";"mois";"jour";"finance";"finance;economie;social";"Internationale";"Monde;France";;;"a_verifier";
+"EVE0174";"Faillite de Lehman Brothers";"2008-09-15";;"jour";;"finance";"finance;economie";"Internationale";"États-Unis;Monde";;;"a_verifier";
+"EVE0175";"Grande Récession";"2008-12-01";"2009-12-31";"mois";"annee";"economie";"economie;social";"Internationale";"Monde;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0176";"Pandémie de grippe A(H1N1)";"2009-04-01";"2010-08-31";"mois";"jour";"sante";"sante;epidemie";"Internationale";"Monde;France";;;"a_verifier";
+"EVE0177";"Crise des dettes souveraines de la zone euro";"2010-01-01";"2012-12-31";"annee";"annee";"finance";"finance;economie;europe";"Internationale";"Europe;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0178";"Séisme et tsunami de Tōhoku, accident de Fukushima";"2011-03-11";;"jour";;"catastrophe";"catastrophe;energie;environnement";"Internationale";"Japon";;;"a_verifier";
+"EVE0179";"Printemps arabes";"2011-01-01";"2012-12-31";"annee";"annee";"politique";"politique;conflit_interieur;geopolitique";"Internationale";"Afrique du Nord;Moyen-Orient";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0180";"Intervention française au Mali (opération Serval)";"2013-01-11";"2014-07-15";"jour";"jour";"guerre";"guerre;geopolitique";"Internationale";"Mali;France";;;"a_verifier";
+"EVE0181";"Attentats de janvier 2015 en France";"2015-01-07";"2015-01-09";"jour";"jour";"terrorisme";"terrorisme;politique";"France";"France";;;"a_verifier";
+"EVE0182";"Attentats du 13 novembre 2015";"2015-11-13";;"jour";;"terrorisme";"terrorisme;politique";"France";"France";;;"a_verifier";
+"EVE0183";"Adoption de l'accord de Paris sur le climat";"2015-12-12";;"jour";;"climat";"climat;diplomatie;environnement";"Internationale";"Monde;France";;;"a_verifier";
+"EVE0184";"Attentat de Nice";"2016-07-14";;"jour";;"terrorisme";"terrorisme";"France";"France";;;"a_verifier";
+"EVE0185";"Référendum britannique sur le Brexit";"2016-06-23";;"jour";;"europe";"europe;politique";"Internationale";"Royaume-Uni;Europe";;;"a_verifier";
+"EVE0186";"Élection d'Emmanuel Macron";"2017-05-07";;"jour";;"politique";"politique";"France";"France";;;"a_verifier";
+"EVE0187";"Mouvement des Gilets jaunes";"2018-11-17";"2019-12-31";"jour";"annee";"social";"social;politique;conflit_interieur";"France";"France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0188";"Incendie de Notre-Dame de Paris";"2019-04-15";;"jour";;"catastrophe";"catastrophe;culture";"France";"France";;;"a_verifier";
+"EVE0189";"Pandémie de Covid-19";"2019-12-01";"2023-05-05";"mois";"jour";"sante";"sante;epidemie;economie;social";"Internationale";"Monde;France";;;"a_verifier";
+"EVE0190";"Premier confinement national lié à la Covid-19";"2020-03-17";"2020-05-11";"jour";"jour";"sante";"sante;social;economie";"France";"France";;;"a_verifier";
+"EVE0191";"Sortie du Royaume-Uni de l'Union européenne";"2020-01-31";;"jour";;"europe";"europe;politique";"Internationale";"Royaume-Uni;Europe";;;"a_verifier";
+"EVE0192";"Explosions du port de Beyrouth";"2020-08-04";;"jour";;"catastrophe";"catastrophe;geopolitique";"Internationale";"Liban";;;"a_verifier";
+"EVE0193";"Reprise économique et tensions sur les chaînes d'approvisionnement";"2021-01-01";"2022-12-31";"annee";"annee";"economie";"economie;commerce";"Internationale";"Monde;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0194";"Inondations en Europe occidentale";"2021-07-14";"2021-07-16";"jour";"jour";"catastrophe";"catastrophe;climat";"Internationale";"Europe";;;"a_verifier";
+"EVE0195";"Début de l'invasion à grande échelle de l'Ukraine par la Russie";"2022-02-24";;"jour";;"guerre";"guerre;geopolitique;energie";"Internationale";"Ukraine;Europe";;;"a_verifier";
+"EVE0196";"Inflation et crise énergétique en Europe";"2022-01-01";"2023-12-31";"annee";"annee";"economie";"economie;energie;social";"Internationale";"Europe;France";;;"a_verifier";"Dates indicatives à confirmer"
+"EVE0197";"Élections législatives sans majorité absolue";"2022-06-19";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0198";"Promulgation de la réforme des retraites de 2023";"2023-04-14";;"jour";;"social";"social;politique;droit";"France";"France";;;"a_verifier";
+"EVE0199";"Émeutes après la mort de Nahel Merzouk";"2023-06-27";"2023-07-04";"jour";"jour";"social";"social;conflit_interieur";"France";"France";;;"a_verifier";
+"EVE0200";"Attaques du 7 octobre et début de la guerre à Gaza";"2023-10-07";;"jour";;"guerre";"guerre;geopolitique";"Internationale";"Israël;Palestine";;;"a_verifier";
+"EVE0201";"Inscription de la liberté de recourir à l'IVG dans la Constitution";"2024-03-08";;"jour";;"droit";"droit;institutions;sante";"France";"France";;;"a_verifier";
+"EVE0202";"Dissolution de l'Assemblée nationale";"2024-06-09";;"jour";;"politique";"politique;institutions";"France";"France";;;"a_verifier";
+"EVE0203";"Jeux olympiques de Paris 2024";"2024-07-26";"2024-08-11";"jour";"jour";"sport";"sport;culture";"France";"France";;;"a_verifier";
+"EVE0204";"Réouverture de Notre-Dame de Paris";"2024-12-07";;"jour";;"culture";"culture;patrimoine";"France";"France";;;"a_verifier";

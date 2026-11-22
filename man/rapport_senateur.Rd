@@ -20,6 +20,8 @@ rapport_senateur(
 \item{ouvrir}{Ouvrir le PDF produit.}
 
 \item{db}{Connexion DuckDB facultative.}
+
+\item{cache}{Repertoire de cache des photographies.}
 }
 \value{
 Chemin du PDF, invisiblement.

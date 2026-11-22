@@ -36,9 +36,9 @@ Le répertoire `deport` est observé dans l'archive AMO10. Il n'est pas couvert 
 
 | Famille | Racine JSON | Chemin de l'UID | Table DuckDB |
 |---|---|---|---|
-| Acteurs | `acteur` | `$.acteur.uid."#text"` | `an_deputes.acteurs` |
-| Organes | `organe` | `$.organe.uid` | `an_deputes.organes` |
-| Déports | `deport` | `$.deport.uid` | `an_deputes.deports` |
+| Acteurs | `acteur` | `$.acteur.uid."#text"` | `an_amo10.acteurs` |
+| Organes | `organe` | `$.organe.uid` | `an_amo10.organes` |
+| Déports | `deport` | `$.deport.uid` | `an_amo10.deports` |
 
 L'UID des acteurs est représenté par un **objet** JSON avec `#text`, contrairement aux deux autres familles. Cette distinction est codée explicitement dans `R/importer_deputes.R`. Une uniformisation naïve du chemin d'extraction supprimerait les identifiants des acteurs.
 
@@ -54,7 +54,7 @@ Point d'entrée : `actualiser(db, jeux = "deputes", cache = ..., archive = NULL,
 2. Si `archive` est fournie, utilise ce fichier local. Sinon, réutilise le ZIP présent dans le cache ; s'il est absent, télécharge l'URL officielle avec `curl --http1.1 -fL --retry 5 --retry-all-errors`, écrit d'abord un fichier `.part`, puis le renomme.
 3. Vérifie le ZIP avec `unzip -tq` ; inventorie les chemins avec `unzip -Z1` ; exige les trois familles et uniquement des JSON sous `json/(acteur|organe|deport)/`. Refuse les chemins traversant `..` et les doublons de noms JSON.
 4. Extrait dans un répertoire temporaire et vérifie la présence des JSON annoncés.
-5. Démarre une transaction DuckDB, crée si nécessaire le schéma `an_deputes` et remplace successivement les tables `acteurs`, `organes`, `deports` par `CREATE OR REPLACE TABLE ... AS SELECT ... FROM read_text(...)`.
+5. Démarre une transaction DuckDB, crée si nécessaire le schéma `an_amo10` et remplace successivement les tables `acteurs`, `organes`, `deports` par `CREATE OR REPLACE TABLE ... AS SELECT ... FROM read_text(...)`.
 6. Pour chaque fichier, stocke `uid` (extrait par `json_extract_string`), `chemin` (chemin relatif à la racine d'extraction) et `contenu` (`content::JSON`, document entier).
 7. Compare le nombre de lignes au nombre de fichiers de la famille, vérifie `count(DISTINCT uid)`, l'absence d'UID nuls et que la racine JSON attendue est un objet. Valide la transaction seulement après les trois familles ; sinon effectue un `ROLLBACK`.
 8. Supprime le répertoire temporaire en sortie, y compris en cas d'erreur ; **conserve le ZIP dans le cache**.
@@ -81,20 +81,20 @@ actualiser(db)
 
 DBI::dbGetQuery(db, "
   SELECT 'acteur' AS famille, count(*) AS n, count(DISTINCT uid) AS uniques
-  FROM an_deputes.acteurs
+  FROM an_amo10.acteurs
   UNION ALL
   SELECT 'organe', count(*), count(DISTINCT uid)
-  FROM an_deputes.organes
+  FROM an_amo10.organes
   UNION ALL
   SELECT 'deport', count(*), count(DISTINCT uid)
-  FROM an_deputes.deports
+  FROM an_amo10.deports
 ")
 
 DBI::dbGetQuery(db, "
   SELECT uid,
          json_extract_string(contenu, '$.acteur.etatCivil.ident.prenom') AS prenom,
          json_extract_string(contenu, '$.acteur.etatCivil.ident.nom') AS nom
-  FROM an_deputes.acteurs LIMIT 5
+  FROM an_amo10.acteurs LIMIT 5
 ")
 ```
 
@@ -114,7 +114,7 @@ La dernière requête est un exemple d'accès à la donnée imbriquée, **pas** 
 
 - **Conserver le JSON complet**, ne pas décomposer prématurément les mandats, adresses et organes en tables secondaires.
 - **Limiter les colonnes matérialisées** à `uid`, `chemin`, `contenu` tant qu'aucun besoin métier récurrent ne justifie autre chose.
-- **Une source = un schéma DuckDB** : ici `an_deputes`.
+- **Une source = un schéma DuckDB** : ici `an_amo10`.
 - Ne pas interpréter l'absence de champ ou `null` comme une erreur métier sans règle documentée.
 - Évolutions possibles, **non implémentées** : suivi des versions et de la fraîcheur distante, manifeste d'import (URL, SHA-256, date, effectifs), contrôles de références croisées, tests de compatibilité des structures JSON, vues analytiques des mandats.
 

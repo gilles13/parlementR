@@ -49,7 +49,7 @@
     packageStartupMessage("Bienvenue dans parlementR !")
     packageStartupMessage("Aucune donnee parlementaire locale n'a encore ete importee.")
     packageStartupMessage("Documentation : help(package = \"parlementR\")")
-    packageStartupMessage("Cheatsheet : produire_cheatsheet_grid()")
+    packageStartupMessage("Cheatsheet : produire_cheatsheet()")
     packageStartupMessage("Premier import : actualiser(jeux = \"deputes\")")
     return(invisible(NULL))
   }

@@ -1,9 +1,9 @@
 # Extraction locale des mandats gouvernementaux AMO30.
 # Une ligne par mandat ministeriel et gouvernement de rattachement.
 .mandats_gouvernement = function(db) {
-  if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_historique", table = "acteurs")) ||
-      !DBI::dbExistsTable(db, DBI::Id(schema = "an_historique", table = "organes"))) {
-    stop("Tables an_historique.acteurs/organes absentes : actualiser(jeux = 'historique').",
+  if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_amo30", table = "acteurs")) ||
+      !DBI::dbExistsTable(db, DBI::Id(schema = "an_amo30", table = "organes"))) {
+    stop("Tables an_amo30.acteurs/organes absentes : actualiser(jeux = 'historique').",
          call. = FALSE)
   }
   sql = "
@@ -14,12 +14,13 @@
              m.value ->> '$.uid' AS mandat_uid,
              m.value ->> '$.typeOrgane' AS type_organe,
              m.value ->> '$.@xsi:type' AS type_mandat,
+             m.value ->> '$.infosQualite.codeQualite' AS code_qualite,
              m.value ->> '$.infosQualite.libQualite' AS fonction,
              TRY_CAST(m.value ->> '$.preseance' AS INTEGER) AS preseance,
              m.value ->> '$.organes.organeRef' AS organe_uid,
              TRY_CAST(m.value ->> '$.dateDebut' AS DATE) AS debut,
              TRY_CAST(m.value ->> '$.dateFin' AS DATE) AS fin
-      FROM an_historique.acteurs a,
+      FROM an_amo30.acteurs a,
            json_each(a.contenu, '$.acteur.mandats.mandat') m
       WHERE (m.value ->> '$.typeOrgane') IN ('GOUVERNEMENT', 'MINISTERE')
         AND (m.value ->> '$.@xsi:type') = 'MandatSimple_Type'
@@ -31,7 +32,7 @@
              TRY_CAST(o.contenu ->> '$.organe.viMoDe.dateDebut' AS DATE) AS debut_officiel,
              TRY_CAST(o.contenu ->> '$.organe.viMoDe.dateFin' AS DATE) AS fin_officielle
       FROM mandats m
-      JOIN an_historique.organes o ON o.uid = m.organe_uid
+      JOIN an_amo30.organes o ON o.uid = m.organe_uid
       WHERE m.type_organe = 'GOUVERNEMENT'
     ),
     ministeres AS (
@@ -39,7 +40,7 @@
              o.contenu ->> '$.organe.libelleAbrege' AS portefeuille_abrege,
              TRY_CAST(o.contenu ->> '$.organe.preseance' AS INTEGER) AS preseance_ministere
       FROM mandats m
-      LEFT JOIN an_historique.organes o ON o.uid = m.organe_uid
+      LEFT JOIN an_amo30.organes o ON o.uid = m.organe_uid
       WHERE m.type_organe = 'MINISTERE'
     )
     , candidats AS (
@@ -66,14 +67,14 @@
        AND g.debut_officiel <= COALESCE(m.fin, DATE '9999-12-31')
     )
     SELECT c.acteur_uid, c.prenom, c.nom, c.mandat_uid,
-           c.fonction, c.preseance AS preseance_qualite,
+           c.code_qualite, c.fonction, c.preseance AS preseance_qualite,
            c.preseance_ministere AS preseance, c.organe_uid AS ministere_uid,
            c.portefeuille, c.portefeuille_abrege,
            c.debut, c.fin, c.gouvernement_uid,
            o.contenu ->> '$.organe.libelleAbrege' AS gouvernement,
            c.debut_gouvernement, c.fin_gouvernement
     FROM candidats c
-    LEFT JOIN an_historique.organes o ON o.uid = c.gouvernement_uid
+    LEFT JOIN an_amo30.organes o ON o.uid = c.gouvernement_uid
     WHERE c.rang = 1
     ORDER BY c.debut, c.nom, c.prenom, c.mandat_uid"
   donnees = .db_get_tibble(db, sql)
@@ -95,22 +96,22 @@
 #' @export
 cat_gvts = function(db = NULL) {
   db = .connexion_valide(db)
-  if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_historique", table = "organes")))
-    stop("Table an_historique.organes absente.", call. = FALSE)
+  if (!DBI::dbExistsTable(db, DBI::Id(schema = "an_amo30", table = "organes")))
+    stop("Table an_amo30.organes absente.", call. = FALSE)
   gouvernements = .db_get_tibble(db, "
     SELECT uid AS gouvernement_uid,
            contenu ->> '$.organe.libelleAbrege' AS gouvernement,
            TRY_CAST(contenu ->> '$.organe.viMoDe.dateDebut' AS DATE) AS debut,
            TRY_CAST(contenu ->> '$.organe.viMoDe.dateFin' AS DATE) AS fin
-    FROM an_historique.organes
+    FROM an_amo30.organes
     WHERE (contenu ->> '$.organe.codeType') = 'GOUVERNEMENT'
     ORDER BY debut")
   membres = .mandats_gouvernement(db)
   stats = dplyr::summarise(
     dplyr::group_by(membres, gouvernement_uid),
     effectif = dplyr::n_distinct(acteur_uid),
-    premier_ministre = paste(sort(unique(paste(prenom[fonction == 'Premier ministre'],
-                                               nom[fonction == 'Premier ministre']))),
+    premier_ministre = paste(sort(unique(paste(prenom[.data$code_qualite == 'Premier ministre'],
+                                               nom[.data$code_qualite == 'Premier ministre']))),
                             collapse = ', '), .groups = 'drop')
   dplyr::left_join(gouvernements, stats, by = 'gouvernement_uid')
 }

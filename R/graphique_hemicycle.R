@@ -1,4 +1,4 @@
-utils::globalVariables(c("n", "groupe", "angle", "rang", "x", "y", "label"))
+utils::globalVariables(c("n", "groupe", "angle", "rang", "x", "y", "label", "sigle", "libelle", "effectif", "etiquette"))
 
 #' Hemicycle des deputes par groupe
 #' @param donnees Tableau avec les colonnes groupe (sigle) et n (effectif).

@@ -44,7 +44,7 @@
 #' @param db Connexion DuckDB facultative.
 #' @return Tibble de deux colonnes : nom_complet et nom_simplifie.
 #' @export
-recherche_code = function(recherche = NULL, db = NULL) {
+rech_code = function(recherche = NULL, db = NULL) {
   db = if (is.null(db)) connexion() else .connexion_valide(db)
   catalogue = .legi_catalogue(db)
   x = catalogue[, c("nom_complet", "nom_simplifie")]
@@ -70,12 +70,12 @@ recherche_code = function(recherche = NULL, db = NULL) {
 
 .legi_code = function(db, code) {
   if (!is.character(code) || length(code) != 1L || is.na(code) || !nzchar(trimws(code)))
-    stop("Code invalide. Utiliser recherche_code() pour les noms disponibles.")
+    stop("Code invalide. Utiliser rech_code() pour les noms disponibles.")
   catalogue = .legi_catalogue(db)
   candidats = which(catalogue$nom_simplifie == code | catalogue$nom_complet == code)
   if (length(candidats) != 1L)
     stop("Code introuvable ou ambigu : '", code,
-         "'. Pour identifier le bon nom simplifie, utiliser recherche_code().")
+         "'. Pour identifier le bon nom simplifie, utiliser rech_code().")
   catalogue[candidats, c("id", "nom_complet", "nom_simplifie")]
 }
 

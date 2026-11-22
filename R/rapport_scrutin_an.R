@@ -30,7 +30,7 @@
     FROM an_amendements.amendements a
     LEFT JOIN an_dossiers.documents d
       ON d.uid = json_extract_string(a.contenu, '$.amendement.texteLegislatifRef')
-    LEFT JOIN an_historique.acteurs p
+    LEFT JOIN an_amo30.acteurs p
       ON p.uid = json_extract_string(a.contenu, '$.amendement.signataires.auteur.acteurRef')
     WHERE regexp_matches(json_extract_string(a.contenu,
       '$.amendement.identification.numeroLong'), ?)",
@@ -81,7 +81,7 @@
   .db_get_tibble(db, paste0("SELECT uid, trim(concat_ws(' ',
     json_extract_string(contenu, '$.acteur.etatCivil.ident.prenom'),
     json_extract_string(contenu, '$.acteur.etatCivil.ident.nom'))) AS nom
-    FROM an_historique.acteurs WHERE uid IN (", valeurs, ") ORDER BY nom"))
+    FROM an_amo30.acteurs WHERE uid IN (", valeurs, ") ORDER BY nom"))
 }
 
 #' Produire un rapport PDF sur un scrutin public de l'Assemblee nationale
@@ -110,7 +110,7 @@ rapport_scrutin_an = function(scrutin, db = NULL, contexte = NULL,
        is.na(amendement_uid) || !grepl("^AMANR", amendement_uid)))
     stop("'amendement_uid' doit etre un UID officiel d'amendement")
   db = .connexion_valide(db)
-  requis = c("an_votes.scrutins", "an_historique.acteurs", "an_historique.organes")
+  requis = c("an_votes.scrutins", "an_amo30.acteurs", "an_amo30.organes")
   present = vapply(strsplit(requis, ".", fixed = TRUE), function(x)
     DBI::dbExistsTable(db, DBI::Id(schema = x[1], table = x[2])), logical(1))
   if (!all(present)) stop("Tables manquantes : ", paste(requis[!present], collapse = ", "))
@@ -135,8 +135,8 @@ rapport_scrutin_an = function(scrutin, db = NULL, contexte = NULL,
              json_extract_string(g.contenu, '$.organe.libelleAbrev'),
              json_extract_string(g.contenu, '$.organe.libelle')) AS groupe
     FROM an_votes.votes_deputes v
-    LEFT JOIN an_historique.acteurs a ON a.uid = v.depute_uid
-    LEFT JOIN an_historique.organes g ON g.uid = v.groupe_uid
+    LEFT JOIN an_amo30.acteurs a ON a.uid = v.depute_uid
+    LEFT JOIN an_amo30.organes g ON g.uid = v.groupe_uid
     WHERE v.scrutin_uid = ?", params = list(uid))
   if (anyDuplicated(votes$depute_uid)) stop("Votes nominatifs dupliques pour ce scrutin")
   codes = c(pours = "Pour", contres = "Contre", abstentions = "Abstention",

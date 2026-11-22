@@ -9,7 +9,7 @@ cat_dosleg_an(
   db = NULL,
   limite = 100L,
   sortie = NULL,
-  ouvrir = FALSE,
+  ouvrir = TRUE,
   pdf = TRUE
 )
 }
@@ -31,5 +31,5 @@ Chemin du PDF (invisible), ou tibble si pdf = FALSE.
 }
 \description{
 Recherche exclusivement dans la base DuckDB locale. Les titres officiels
-sont privilegies ; les references permettent d'appeler rapport_dosleg_an().
+sont privilegies ; les references permettent d'appeler rapport_legislatif_an().
 }

@@ -1,86 +1,83 @@
-#' Rapport legislatif thematique, construit exclusivement depuis DuckDB
-#'
-#' @param db Connexion DBI facultative ; NULL utilise connexion().
-#' @param sujet Expression recherchee dans les titres des dossiers.
-#' @param fichier PDF de sortie, par defaut dans le repertoire temporaire.
-#' @param limite Nombre maximum de dossiers dans le rapport.
-#' @param pdf Si FALSE, renvoie les donnees sans produire de PDF.
-#' @return Chemin du PDF (invisible) ou liste de tables si pdf = FALSE.
-#' @export
-rapport_legislatif_an = function(db = NULL, sujet = NULL, fichier = NULL, limite = 20L, pdf = TRUE) {
-  # Accepte rapport_legislatif_an("logement") et l'ancien appel (db, "logement").
-  if (is.character(db) && is.null(sujet)) {
-    sujet = db
-    db = NULL
+# Parcours d'un dossier legislatif AN, exclusivement depuis DuckDB local.
+.extraire_actes_legislatifs_an = function(x) {
+  lignes = list()
+  visiter = function(noeud, niveau = 0L) {
+    if (is.null(noeud)) return(invisible(NULL))
+    if (is.list(noeud) && is.null(names(noeud))) {
+      for (element in noeud) visiter(element, niveau)
+      return(invisible(NULL))
+    }
+    if (!is.list(noeud)) return(invisible(NULL))
+    if (!is.null(noeud$codeActe)) {
+      valeur = function(y) if (is.null(y) || !length(y)) NA_character_ else as.character(y[[1L]])
+      lignes[[length(lignes) + 1L]] <<- data.frame(
+        niveau = niveau, uid = valeur(noeud$uid),
+        code = valeur(noeud$codeActe),
+        libelle = valeur(noeud$libelleActe$libelleCourt),
+        type = valeur(noeud[["@xsi:type"]]),
+        date = valeur(noeud$dateActe),
+        organe_ref = valeur(noeud$organeRef),
+        texte_associe = valeur(noeud$texteAssocie),
+        stringsAsFactors = FALSE)
+      niveau = niveau + 1L
+    }
+    enfants = noeud$actesLegislatifs$acteLegislatif
+    if (!is.null(enfants)) visiter(enfants, niveau)
+    invisible(NULL)
   }
+  visiter(x)
+  if (!length(lignes)) return(data.frame(niveau = integer(), uid = character(),
+    code = character(), libelle = character(), type = character(), date = character(),
+    organe_ref = character(), texte_associe = character()))
+  do.call(rbind, lignes)
+}
+
+#' Rapport du parcours legislatif d'un dossier de l'Assemblee nationale
+#'
+#' Restitue les etapes et evenements hierarchises, puis les documents lies.
+#' Les relations sont exclusivement celles de la base locale.
+#' @param ref UID officiel du dossier legislatif.
+#' @param ouvrir Ouvrir le PDF apres sa production (TRUE par defaut).
+#' @param fichier Chemin du PDF, dans /tmp par defaut.
+#' @param pdf Si FALSE, renvoyer les donnees sans produire de PDF.
+#' @param db Connexion DuckDB facultative ; NULL utilise connexion().
+#' @return Chemin du PDF (invisible), ou liste de tables si pdf = FALSE.
+#' @export
+rapport_legislatif_an = function(ref, ouvrir = TRUE, fichier = NULL, pdf = TRUE, db = NULL) {
+  if (!is.character(ref) || length(ref) != 1L || is.na(ref) ||
+      !grepl("^[A-Za-z0-9_-]+$", ref)) stop("'ref' doit etre un UID valide")
   db = .connexion_valide(db)
-  if (!is.character(sujet) || length(sujet) != 1L || is.na(sujet) ||
-      !nzchar(trimws(sujet))) stop("'sujet' doit etre une expression non vide")
-  if (length(limite) != 1L || is.na(limite) || limite < 1 ||
-      limite != as.integer(limite)) stop("'limite' doit etre un entier positif")
-  requis = c("an_dossiers.dossiers", "an_dossiers.documents",
-             "an_amendements.amendements")
+  requis = c("an_dossiers.dossiers", "an_dossiers.documents")
   present = vapply(strsplit(requis, ".", fixed = TRUE), function(x)
-    DBI::dbExistsTable(db, DBI::Id(schema = x[1], table = x[2])), logical(1))
+    DBI::dbExistsTable(db, DBI::Id(schema = x[1L], table = x[2L])), logical(1))
   if (!all(present)) stop("Tables manquantes : ", paste(requis[!present], collapse = ", "))
-  motif = paste0("%", trimws(sujet), "%")
-  sql = paste0("SELECT uid, ",
-    "json_extract_string(contenu, '$.dossierParlementaire.titreDossier.titre') titre, ",
+  donnees = .db_get_tibble(db, paste0(
+    "SELECT uid, contenu::VARCHAR AS contenu, ",
+    "json_extract_string(contenu, '$.dossierParlementaire.titreDossier.titre') AS titre, ",
     "json_extract_string(contenu, '$.dossierParlementaire.procedureParlementaire.libelle') AS \"procedure\", ",
-    "json_extract_string(contenu, '$.dossierParlementaire.legislature') legislature ",
-    "FROM an_dossiers.dossiers WHERE ",
-    "lower(json_extract_string(contenu, '$.dossierParlementaire.titreDossier.titre')) LIKE lower(?) ",
-    "ORDER BY uid LIMIT ?")
-  dossiers = .db_get_tibble(db, sql, params = list(motif, as.integer(limite)))
-  if (!nrow(dossiers)) stop("Aucun dossier trouve pour : ", sujet)
-  # Relation fiable dossier -> notices documentaires via dossierRef.
+    "json_extract_string(contenu, '$.dossierParlementaire.legislature') AS legislature ",
+    "FROM an_dossiers.dossiers WHERE uid = ?"), params = list(ref))
+  if (!nrow(donnees)) stop("Dossier introuvable : ", ref)
+  objet = jsonlite::fromJSON(donnees$contenu[[1L]], simplifyVector = FALSE)
+  actes = .extraire_actes_legislatifs_an(objet$dossierParlementaire$actesLegislatifs$acteLegislatif)
+  dossiers = donnees[, c("uid", "titre", "procedure", "legislature")]
   documents = .db_get_tibble(db, paste0(
-    "SELECT d.uid dossier_uid, x.uid document_uid, ",
-    "json_extract_string(x.contenu, '$.document.titres.titrePrincipal') titre, ",
-    "json_extract_string(x.contenu, '$.document.cycleDeVie.dateDepot') date_depot ",
-    "FROM an_dossiers.documents x JOIN an_dossiers.dossiers d ",
-    "ON json_extract_string(x.contenu, '$.document.dossierRef') = d.uid ",
-    "WHERE d.uid IN (", paste(rep("?", nrow(dossiers)), collapse = ","), ")"),
-    params = as.list(dossiers$uid))
-  # Un amendement se rapporte a un texte : la reference peut etre distincte
-  # de l'UID de la notice. Ne pas fabriquer de jointure approximative.
-  amendements = if (nrow(documents)) .db_get_tibble(db, paste0(
-    "SELECT uid, ",
-    "json_extract_string(contenu, '$.amendement.identification.numeroLong') numero, ",
-    "json_extract_string(contenu, '$.amendement.cycleDeVie.sort') sort, ",
-    "json_extract_string(contenu, '$.amendement.texteLegislatifRef') texte_ref, ",
-    "json_extract_string(contenu, '$.amendement.corps.exposeSommaire') expose ",
-    "FROM an_amendements.amendements WHERE ",
-    "json_extract_string(contenu, '$.amendement.texteLegislatifRef') IN (",
-    paste(rep("?", nrow(documents)), collapse = ","), ")"),
-    params = as.list(documents$document_uid)) else
-      tibble::tibble(uid = character(), numero = character(), sort = character(),
-                 texte_ref = character(), expose = character())
-  for (colonne in c("titre", "procedure", "legislature"))
-    dossiers[[colonne]] = .valeur_parlementaire(dossiers[[colonne]], colonne)
-  for (colonne in c("titre", "date_depot"))
-    documents[[colonne]] = .valeur_parlementaire(documents[[colonne]], colonne)
-  for (colonne in c("numero", "sort", "texte_ref", "expose"))
-    amendements[[colonne]] = .valeur_parlementaire(amendements[[colonne]], colonne)
-  resultat = .sujet_recherche(list(dossiers = dossiers, documents = documents, amendements = amendements), sujet)
-  if (!pdf) return(resultat)
-  .verifier_volume_rapport(nrow(dossiers), seuil_alerte = 20L,
-                           seuil_max = 100L, unite = "dossiers")
-  .verifier_volume_rapport(nrow(amendements))
-  if (is.null(fichier)) fichier = file.path(tempdir(), "parlementR-rapport-legislatif.pdf")
-  if (!requireNamespace("rmarkdown", quietly = TRUE) ||
-      !requireNamespace("knitr", quietly = TRUE))
-    stop("Installer 'rmarkdown' et 'knitr' pour produire un PDF")
-  modele = system.file("modeles", "rapport_legislatif.Rmd", package = "parlementR")
-  if (!nzchar(modele)) modele = "inst/modeles/rapport_legislatif.Rmd"
-  if (!file.exists(modele)) stop("Modele de rapport introuvable")
-  dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
-  sortie = rmarkdown::render(modele, output_file = basename(fichier),
-    output_dir = normalizePath(dirname(fichier)),
-    params = c(list(sujet = sujet,
-      titre = .echapper_latex_senateurs("Assembl\u00e9e nationale - Rapport l\u00e9gislatif"),
-      sous_titre = .echapper_latex_senateurs(sujet),
-      logo = .logo_pdf_parlementR()), resultat), quiet = TRUE,
-    envir = new.env(parent = globalenv()))
-  invisible(normalizePath(sortie))
+    "SELECT uid AS document_uid, ",
+    "json_extract_string(contenu, '$.document.titres.titrePrincipal') AS titre, ",
+    "json_extract_string(contenu, '$.document.cycleDeVie.chrono.dateDepot') AS date_depot, ",
+    "json_extract_string(contenu, '$.document.cycleDeVie.chrono.datePublication') AS date_publication ",
+    "FROM an_dossiers.documents WHERE ",
+    "json_extract_string(contenu, '$.document.dossierRef') = ? ",
+    "ORDER BY date_depot NULLS LAST, document_uid"), params = list(ref))
+  resultat = list(dossiers = dossiers, actes = tibble::as_tibble(actes), documents = documents)
+  if (!isTRUE(pdf)) return(resultat)
+  .verifier_volume_rapport(nrow(documents), unite = "documents")
+  if (is.null(fichier)) fichier = file.path("/tmp", paste0("parlementR-legislatif-an-", ref, ".pdf"))
+  if (!is.character(fichier) || length(fichier) != 1L || is.na(fichier) ||
+      !nzchar(fichier) || tolower(tools::file_ext(fichier)) != "pdf")
+    stop("'fichier' doit designer un PDF")
+  .pdf_legislatif_an_grid(resultat, fichier)
+  chemin = normalizePath(fichier, mustWork = TRUE)
+  .ouvrir_pdf(chemin, ouvrir = ouvrir)
+  invisible(chemin)
 }

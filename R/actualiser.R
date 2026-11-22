@@ -43,8 +43,8 @@ actualiser = function(db = NULL, jeux = "deputes",
     "WHERE jeu = 'questions' AND NOT EXISTS (",
     "SELECT 1 FROM suivi.actualisations WHERE jeu = 'questions_senat')"))
   tables = list(
-    deputes = c("an_deputes.acteurs", "an_deputes.organes", "an_deputes.deports"),
-    historique = c("an_historique.acteurs", "an_historique.organes", "an_historique.deports"),
+    deputes = c("an_amo10.acteurs", "an_amo10.organes", "an_amo10.deports"),
+    historique = c("an_amo30.acteurs", "an_amo30.organes", "an_amo30.deports"),
     scrutins = "an_votes.scrutins",
     reunions = "an_reunions.reunions",
     debats = c("an_debats.debats_seances", "an_debats.debats_points",

@@ -1,12 +1,12 @@
 Package: parlementR
 Title: Donnees ouvertes parlementaires francaises
-Version: 0.0.13
+Version: 0.1.0
 Authors@R: person("Gilles", "FIDANI", role = c("aut", "cre"), email = "gillesfidani@gmail.com")
 Description: Importe et conserve les donnees ouvertes parlementaires dans DuckDB.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
-Imports: DBI, RPostgres, duckdb, png, jpeg, grid, tibble, jsonlite, xml2, dplyr, ggplot2
+Imports: DBI, RPostgres, duckdb, png, jpeg, grid, tibble, jsonlite, xml2, dplyr, ggplot2, ggrepel, treemapify
 Suggests: rsvg, testthat, knitr, rmarkdown, pkgdown, shiny, DT, rvest, tidytext, stopwords, ggwordcloud, viridis
 VignetteBuilder: knitr
 Config/testthat/edition: 3

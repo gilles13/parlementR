@@ -7,7 +7,7 @@
 rapport_docs(
   references,
   fichier = NULL,
-  ouvrir = FALSE,
+  ouvrir = TRUE,
   surligner = TRUE,
   pdf = TRUE
 )

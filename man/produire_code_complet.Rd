@@ -15,7 +15,7 @@ produire_code_complet(
 )
 }
 \arguments{
-\item{code}{Nom simplifie du code (voir recherche_code()).}
+\item{code}{Nom simplifie du code (voir rech_code()).}
 
 \item{date}{Date de validite des articles.}
 

@@ -1,7 +1,7 @@
 #' Produire un catalogue PDF de dossiers correspondant a un sujet
 #'
 #' Recherche exclusivement dans la base DuckDB locale. Les titres officiels
-#' sont privilegies ; les references permettent d'appeler rapport_dosleg_an().
+#' sont privilegies ; les references permettent d'appeler rapport_legislatif_an().
 #' @param sujet Expression recherchee dans les titres officiels.
 #' @param db Connexion DuckDB ; NULL utilise connexion().
 #' @param limite Nombre maximum de dossiers (100 par defaut).

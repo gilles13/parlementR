@@ -10,7 +10,7 @@
   x = .db_get_tibble(con, "SELECT uid,
     contenu ->> '$.acteur.etatCivil.ident.prenom' AS prenom,
     contenu ->> '$.acteur.etatCivil.ident.nom' AS nom
-    FROM an_deputes.acteurs")
+    FROM an_amo10.acteurs")
   x = x[!is.na(x$nom) & nzchar(x$nom), , drop = FALSE]
   complet = trimws(paste(x$prenom, x$nom))
   cle = .normaliser_nom_depute(nom)
@@ -48,13 +48,13 @@ fiche_depute = function(nom, db = NULL,
                          cache = tools::R_user_dir("parlementR", "cache")) {
   con = .connexion_valide(db)
   for (table in c('acteurs', 'organes', 'deports')) {
-    if (!DBI::dbExistsTable(con, DBI::Id(schema = 'an_deputes', table = table)))
-      stop('Table an_deputes.', table, ' absente : actualiser les donnees des deputes.', call. = FALSE)
+    if (!DBI::dbExistsTable(con, DBI::Id(schema = 'an_amo10', table = table)))
+      stop('Table an_amo10.', table, ' absente : actualiser les donnees des deputes.', call. = FALSE)
   }
   personne = .resoudre_depute(nom, con)
   id = personne$uid[[1]]
   acteur = .db_get_tibble(con,
-    'SELECT CAST(contenu AS VARCHAR) AS contenu FROM an_deputes.acteurs WHERE uid = ?',
+    'SELECT CAST(contenu AS VARCHAR) AS contenu FROM an_amo10.acteurs WHERE uid = ?',
     params = list(id))
   document = jsonlite::fromJSON(acteur$contenu[[1]], simplifyVector = FALSE)$acteur
   mandats = document$mandats$mandat
@@ -69,14 +69,14 @@ fiche_depute = function(nom, db = NULL,
   if (length(refs)) {
     q = paste(rep('?', length(refs)), collapse = ',')
     lignes = .db_get_tibble(con, paste0('SELECT uid, CAST(contenu AS VARCHAR) AS contenu ',
-      'FROM an_deputes.organes WHERE uid IN (', q, ')'), params = as.list(refs))
+      'FROM an_amo10.organes WHERE uid IN (', q, ')'), params = as.list(refs))
     organes = stats::setNames(lapply(lignes$contenu, function(z)
       jsonlite::fromJSON(z, simplifyVector = FALSE)$organe), lignes$uid)
   }
   # Les deports peuvent etre relies a un acteur par des champs imbriques.
   # Le filtre JSON textuel est suivi d'une verification recursive des valeurs.
   candidats = .db_get_tibble(con,
-    "SELECT uid, CAST(contenu AS VARCHAR) AS contenu FROM an_deputes.deports
+    "SELECT uid, CAST(contenu AS VARCHAR) AS contenu FROM an_amo10.deports
      WHERE contains(CAST(contenu AS VARCHAR), ?)", params = list(id))
   contient = function(x, valeur) {
     if (is.list(x)) return(any(vapply(x, contient, logical(1), valeur = valeur)))

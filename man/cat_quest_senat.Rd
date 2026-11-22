@@ -9,7 +9,7 @@ cat_quest_senat(
   db = NULL,
   limite = 100L,
   sortie = NULL,
-  ouvrir = FALSE,
+  ouvrir = TRUE,
   pdf = TRUE,
   theme = NULL
 )

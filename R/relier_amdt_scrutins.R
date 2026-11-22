@@ -23,7 +23,7 @@ relier_amdt_scrutins = function(amendements, db = NULL, groupes = FALSE) {
   if (!length(ids)) return(tibble::tibble(uid_amendement = character(),
     uid_scrutin = character(), statut_liaison = character()))
   requis = c("an_amendements.amendements", "an_votes.scrutins")
-  if (groupes) requis = c(requis, "an_historique.organes")
+  if (groupes) requis = c(requis, "an_amo30.organes")
   ok = vapply(strsplit(requis, ".", fixed = TRUE), function(x)
     DBI::dbExistsTable(db, DBI::Id(schema = x[1L], table = x[2L])), logical(1))
   if (!all(ok)) stop("Tables absentes : ", paste(requis[!ok], collapse = ", "))
@@ -90,6 +90,6 @@ relier_amdt_scrutins = function(amendements, db = NULL, groupes = FALSE) {
              json_extract_string(o.contenu, '$.organe.libelle')) AS groupe,
     v.position, v.pour, v.contre, v.abstentions, v.non_votants
     FROM an_votes.votes_groupes v
-    LEFT JOIN an_historique.organes o ON o.uid = v.groupe_uid")
+    LEFT JOIN an_amo30.organes o ON o.uid = v.groupe_uid")
   dplyr::left_join(d, g, by = "uid_scrutin")
 }

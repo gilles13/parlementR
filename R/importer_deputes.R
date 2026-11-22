@@ -61,13 +61,13 @@
   journal("Transaction DuckDB")
   DBI::dbBegin(db)
   tryCatch({
-    DBI::dbExecute(db, "CREATE SCHEMA IF NOT EXISTS an_deputes")
+    DBI::dbExecute(db, "CREATE SCHEMA IF NOT EXISTS an_amo10")
     prefixe = paste0(normalizePath(dossier, winslash = "/"), "/")
     prefixe_sql = as.character(DBI::dbQuoteString(db, prefixe))
 
     for (famille in familles) {
       journal("Importation de ", famille)
-      table = paste0("an_deputes.", famille, "s")
+      table = paste0("an_amo10.", famille, "s")
       motif = file.path(dossier, "json", famille, "*.json")
       motif_sql = as.character(DBI::dbQuoteString(db, motif))
       uid_path = if (famille == "acteur") {

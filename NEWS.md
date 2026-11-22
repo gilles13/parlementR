@@ -1,3 +1,18 @@
+# parlementR 0.1.0
+
+## New features
+- Add historical datasets for French heads of state and major events.
+- Add `produire_frise()` for historical timelines with political regimes, events and the parlementR logo.
+- Add `produire_treemap()` to visualize the distribution of deputies across parliamentary groups.
+- Reuse consistent parliamentary group colors across visualizations.
+
+## Improvements
+- Rename `produire_cheatsheet_grid()` to `produire_cheatsheet()`.
+- Add a simplified one-page cheatsheet, enabled by default.
+- Update package documentation and examples.
+- Improve historical data handling and package portability.
+- Clean up dependencies and resolve R CMD check warnings and notes.
+
 # Interface de découverte (2026-11-15)
 
 - `explorer()` : recherche globale, députés et sénateurs, avec Shiny facultatif.
@@ -88,3 +103,5 @@
 
 - Les dates et versions des *données* sont indépendantes de la version du package. `suivi.actualisations` conserve l’état de suivi des jeux importés, mais ne constitue pas encore un historique exhaustif de toutes les versions d’archives.
 - Cette entrée récapitule les évolutions réalisées au cours de la phase `0.0.1` ; elle ne garantit pas que tous les correctifs locaux aient été appliqués à une même copie de travail.
+
+- Ajout de produire_treemap() pour les groupes politiques de l Assemblee nationale.

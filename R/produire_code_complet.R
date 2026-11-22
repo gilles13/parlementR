@@ -1,6 +1,6 @@
 #' Produire un code LEGI complet en PDF
 #'
-#' @param code Nom simplifie du code (voir recherche_code()).
+#' @param code Nom simplifie du code (voir rech_code()).
 #' @param date Date de validite des articles.
 #' @param sortie Chemin du PDF ; par defaut /tmp/code_<nom_simplifie>.pdf.
 #' @param ouvrir Ouvrir le document dans zathura.

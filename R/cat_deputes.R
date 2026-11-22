@@ -29,7 +29,7 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
   sql = "
     WITH mandats AS (
       SELECT a.uid AS acteur_uid, m.value AS mandat
-      FROM an_deputes.acteurs a,
+      FROM an_amo10.acteurs a,
            json_each(a.contenu, '$.acteur.mandats.mandat') m
     ),
     actifs AS (
@@ -51,9 +51,9 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
            o.uid AS organe_uid,
            json_extract_string(o.contenu, '$.organe.libelle') AS organe,
            json_extract_string(o.contenu, '$.organe.libelleAbrege') AS sigle
-    FROM an_deputes.acteurs a
+    FROM an_amo10.acteurs a
     JOIN actifs m ON a.uid = m.acteur_uid
-    LEFT JOIN an_deputes.organes o ON o.uid = m.organe_uid
+    LEFT JOIN an_amo10.organes o ON o.uid = m.organe_uid
     WHERE m.type_organe IN (
       'ASSEMBLEE', 'GP', 'COMPER', 'COMNL', 'DELEG', 'BUREAU',
       'DELEGBUREAU', 'MISINFO', 'MISINFOPRE', 'MISINFOCOM', 'CMP'
@@ -64,13 +64,27 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
   # La circonscription provient du mandat parlementaire, non des organes.
   deputes = x[x$type_organe == "ASSEMBLEE", c("uid", "prenom", "nom", "departement", "circo")]
   if (anyDuplicated(deputes$uid)) stop("Plusieurs mandats parlementaires actifs par depute.")
-  groupes = x[x$type_organe == "GP", c("uid", "organe", "sigle", "date_debut", "code_qualite")]
+  groupes = x[x$type_organe == "GP", c("uid", "organe_uid", "organe", "sigle", "date_debut", "code_qualite")]
+  # La presidence est calculee sur tous les mandats GP actifs, avant
+  # selection d'un unique mandat d'appartenance par depute.
+  presidences = unique(groupes[
+    !is.na(groupes$code_qualite) & groupes$code_qualite == "Pr\u00e9sident",
+    c("uid", "organe_uid"), drop = FALSE
+  ])
+  if (anyDuplicated(presidences$organe_uid)) {
+    stop("Plusieurs presidents actifs pour un meme groupe politique.")
+  }
   groupes = groupes[order(groupes$uid, groupes$date_debut, decreasing = TRUE), ]
   groupes = groupes[!duplicated(groupes$uid), ]
   i = match(deputes$uid, groupes$uid)
   deputes$groupe = groupes$organe[i]
   deputes$sigle = groupes$sigle[i]
-  deputes$president = !is.na(groupes$code_qualite[i]) & groupes$code_qualite[i] == "Pr\u00e9sident"
+  cle = paste(deputes$uid, groupes$organe_uid[i], sep = "|")
+  cle_presidences = paste(presidences$uid, presidences$organe_uid, sep = "|")
+  deputes$president = cle %in% cle_presidences
+  if (sum(deputes$president) != nrow(presidences)) {
+    stop("Presidences GP non restituees : verifier les mandats et groupes actifs.")
+  }
   deputes$groupe[is.na(deputes$groupe)] = "Non renseign\u00e9"
   deputes$sigle[is.na(deputes$sigle)] = "?"
   if (!is.null(groupe)) {
@@ -106,30 +120,19 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
   dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
   # Provenance du jeu AMO10 utilise par cette fiche.
   source = .source_archive("deputes", tools::R_user_dir("parlementR", "cache"))
-  suivi = tryCatch(.db_get_tibble(db, paste0(
-    "SELECT date_import, date_controle, modification FROM suivi.actualisations ",
-    "WHERE jeu = 'deputes'")), error = function(e) NULL)
-  valeur_date = function(x) {
-    if (length(x) == 0L || is.na(x[1])) return("Non disponible")
-    format(as.POSIXct(x[1]), "%d/%m/%Y %H:%M:%S")
-  }
-  date_import = if (!is.null(suivi) && nrow(suivi))
-    valeur_date(suivi$date_import) else "Non disponible"
-  date_controle = if (!is.null(suivi) && nrow(suivi))
-    valeur_date(suivi$date_controle) else "Non disponible"
-  date_source = if (!is.null(suivi) && nrow(suivi) &&
-                     !is.na(suivi$modification[1]) &&
-                     nzchar(suivi$modification[1]))
-    suivi$modification[1] else "Non disponible"
+  suivi = tryCatch(.db_get_tibble(db,
+    "SELECT date_import, date_controle, md5 FROM suivi.actualisations WHERE jeu = 'deputes'"),
+    error = function(e) NULL)
+  disponible = function(x) length(x) && !is.na(x[1]) && nzchar(as.character(x[1]))
+  date_maj = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$date_import))
+    format(as.POSIXct(suivi$date_import[1]), "%d/%m/%Y %H:%M") else "Non disponible"
+  empreinte = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$md5))
+    as.character(suivi$md5[1]) else "Non disponible"
   metadonnees = c(
-    "Producteur" = "Assembl\u00e9e nationale (donn\u00e9es ouvertes)",
-    "Jeu" = "AMO10 - d\u00e9put\u00e9s actifs, mandats actifs et organes",
-    "Archive ZIP" = basename(source$chemin),
-    "Source" = "Archive officielle (lien cliquable)",
-    "Derni\u00e8re modification HTTP" = date_source,
-    "Dernier import DuckDB" = date_import,
-    "Dernier contr\u00f4le" = date_controle,
-    "Traitement" = "parlementR - mandats actifs et groupes parlementaires"
+    "Jeu de donn\u00e9es" = "AMO10 - d\u00e9put\u00e9s actifs, mandats actifs et organes",
+    "Date du document" = format(Sys.Date(), "%d/%m/%Y"),
+    "Derni\u00e8re mise \u00e0 jour" = date_maj,
+    "MD5 de l'archive" = empreinte
   )
   chemin = .pdf_catalogue_deputes_grid(
     deputes = deputes, metadonnees = metadonnees,

@@ -27,11 +27,11 @@
       !all(file.exists(file.path(dossier, json)))) stop("Extraction AMO30 incomplete")
   DBI::dbBegin(db)
   tryCatch({
-    DBI::dbExecute(db, "CREATE SCHEMA IF NOT EXISTS an_historique")
+    DBI::dbExecute(db, "CREATE SCHEMA IF NOT EXISTS an_amo30")
     prefixe = as.character(DBI::dbQuoteString(db,
       paste0(normalizePath(dossier, winslash = "/"), "/")))
     for (famille in familles) {
-      table = paste0("an_historique.", famille, "s")
+      table = paste0("an_amo30.", famille, "s")
       motif = as.character(DBI::dbQuoteString(db,
         file.path(dossier, "json", famille, "*.json")))
       uid = if (famille == "acteur") '$.acteur.uid."#text"' else

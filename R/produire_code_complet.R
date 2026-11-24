@@ -12,7 +12,7 @@
 produire_code_complet = function(code = "civil", date = Sys.Date(),
                                   sortie = NULL, ouvrir = TRUE,
                                   db = NULL, police = 9, logo = 1L) {
-  image_logo = .logo_code(logo)
+  image_logo = .logo_parlementR()
   date = as.Date(date)
   if (length(date) != 1L || is.na(date)) stop("Date invalide")
   if (length(police) != 1L || !is.finite(police) || police <= 0) stop("Police invalide")

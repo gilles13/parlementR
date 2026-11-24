@@ -31,7 +31,7 @@ actualiser = function(db = NULL, jeux = "deputes",
     "CREATE TABLE IF NOT EXISTS suivi.actualisations (",
     "jeu VARCHAR PRIMARY KEY, date_import TIMESTAMP NOT NULL)"))
   colonnes = .db_get_tibble(db, "DESCRIBE suivi.actualisations")$column_name
-  for (colonne in c("date_controle", "md5", "etag", "modification")) {
+  for (colonne in c("date_controle", "md5", "sha256", "etag", "modification")) {
     if (!colonne %in% colonnes) {
       type = if (colonne == "date_controle") "TIMESTAMP" else "VARCHAR"
       DBI::dbExecute(db, paste("ALTER TABLE suivi.actualisations ADD COLUMN", colonne, type))
@@ -116,7 +116,7 @@ actualiser = function(db = NULL, jeux = "deputes",
       next
     }
     precedent = .db_get_tibble(db, paste0(
-      "SELECT coalesce(date_controle, date_import) AS dernier, md5, etag, modification ",
+      "SELECT coalesce(date_controle, date_import) AS dernier, md5, sha256, etag, modification ",
       "FROM suivi.actualisations WHERE jeu = ?"), params = list(jeu))
     presentes = .jeu_present(db, jeu, tables[[jeu]])
     delai = if (jeu == "ameli") 24 * 7 else 24
@@ -131,7 +131,9 @@ actualiser = function(db = NULL, jeux = "deputes",
       controle_local = .controle_archive_locale(db, jeu, archive, presentes,
                                                 autoriser_regression)
       if (identical(controle_local, "identique") && presentes) {
-        journal("Archive locale identique : aucun import")
+        DBI::dbExecute(db, "UPDATE suivi.actualisations SET sha256 = ? WHERE jeu = ?",
+                       params = list(.sha256_archive(archive), jeu))
+        journal("Archive locale identique : SHA-256 conserve, aucun import")
         next
       }
     }
@@ -168,9 +170,12 @@ actualiser = function(db = NULL, jeux = "deputes",
     }
     if (!.zip_valide(chemin_archive)) stop("Archive ZIP invalide : ", chemin_archive)
     empreinte = .empreinte_archive(chemin_archive)
+    sha256 = .sha256_archive(chemin_archive)
     if (is.null(archive) && presentes && nrow(precedent) &&
         !is.na(precedent$md5[1]) && identical(empreinte, precedent$md5[1])) {
       .suivi_controle(db, jeu, etag, modification)
+      DBI::dbExecute(db, "UPDATE suivi.actualisations SET sha256 = ? WHERE jeu = ?",
+                     params = list(sha256, jeu))
       journal("Archive distante identique : aucun import")
       next
     }
@@ -208,12 +213,12 @@ actualiser = function(db = NULL, jeux = "deputes",
     journal("Import termine ; enregistrement du suivi DuckDB")
     DBI::dbExecute(db, paste0(
       "INSERT INTO suivi.actualisations ",
-      "(jeu, date_import, date_controle, md5, etag, modification) ",
-      "VALUES (?, current_timestamp, current_timestamp, ?, ?, ?) ",
+      "(jeu, date_import, date_controle, md5, sha256, etag, modification) ",
+      "VALUES (?, current_timestamp, current_timestamp, ?, ?, ?, ?) ",
       "ON CONFLICT (jeu) DO UPDATE SET date_import = excluded.date_import, ",
       "date_controle = excluded.date_controle, md5 = excluded.md5, ",
-      "etag = excluded.etag, modification = excluded.modification"),
-      params = list(jeu, empreinte, etag, modification))
+      "sha256 = excluded.sha256, etag = excluded.etag, modification = excluded.modification"),
+      params = list(jeu, empreinte, sha256, etag, modification))
     journal("Actualisation terminee")
   }
   invisible(TRUE)

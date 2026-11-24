@@ -1,24 +1,21 @@
 # parlementR 0.1.0
 
-## New features
 - Add historical datasets for French heads of state and major events.
 - Add `produire_frise()` for historical timelines with political regimes, events and the parlementR logo.
 - Add `produire_treemap()` to visualize the distribution of deputies across parliamentary groups.
 - Reuse consistent parliamentary group colors across visualizations.
-
-## Improvements
 - Rename `produire_cheatsheet_grid()` to `produire_cheatsheet()`.
 - Add a simplified one-page cheatsheet, enabled by default.
 - Update package documentation and examples.
 - Improve historical data handling and package portability.
 - Clean up dependencies and resolve R CMD check warnings and notes.
 
-# Interface de découverte (2026-11-15)
+# parlementR 0.0.16 (2026-11-15)
 
 - `explorer()` : recherche globale, députés et sénateurs, avec Shiny facultatif.
 - `rechercher_parlementaires()` : recherche locale indépendante de Shiny.
 
-# API harmonisee (2026-11-14)
+# parlementR 0.0.15 (2026-11-14)
 
 - Noms publics rationalises : `rech_`, `fiche_`, `cat_`, `rapport_`.
 - `rech_docs()` et `rech_amdt_senat()` ont des producteurs distincts : `rapport_docs()` et `rapport_amdt_senat()`.
@@ -26,7 +23,7 @@
 - Les rapports documentaires acceptent `pdf = TRUE` par defaut et `pdf = FALSE` pour recuperer les donnees.
 - Les anciens noms publics sont retires, sans alias.
 
-# Documentation AMELI (2026-11-13)
+# parlementR 0.0.14 (2026-11-13)
 
 - Documentation de la source officielle AMELI du Sénat, de ses 29 tables DuckDB, de la restauration PostgreSQL temporaire et de l'actualisation hebdomadaire.
 - Ajout des exemples REPL, des contrôles observés le 13 novembre 2026 et des limites des champs HTML.

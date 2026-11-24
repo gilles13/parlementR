@@ -95,12 +95,8 @@ produire_frise = function(donnees = NULL, evenements = NULL, debut = 1, ids = NU
       ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(alpha = 1, shape = 16, size = 3)))
   }
   if (logo) {
-    chemin = system.file("assets", "02_hemicycle_nuit.svg", package = "parlementR")
-    if (!nzchar(chemin)) chemin = file.path("inst", "assets", "02_hemicycle_nuit.svg")
-    if (file.exists(chemin) && requireNamespace("rsvg", quietly = TRUE)) {
-      dessin = png::readPNG(rsvg::rsvg_png(chemin, width = 240))
-      p = p + ggplot2::annotation_custom(grid::rasterGrob(dessin, interpolate = TRUE), xmin = 1.82, xmax = 2.24, ymin = as.numeric(origine) - 0.06 * (fins - as.numeric(origine)), ymax = as.numeric(origine) - 0.005 * (fins - as.numeric(origine)))
-    } else warning("Logo SVG absent ou paquet rsvg indisponible : frise produite sans logo.", call. = FALSE)
+    dessin = .logo_parlementR()
+    p = p + ggplot2::annotation_custom(grid::rasterGrob(dessin, interpolate = TRUE), xmin = 1.82, xmax = 2.24, ymin = as.numeric(origine) - 0.06 * (fins - as.numeric(origine)), ymax = as.numeric(origine) - 0.005 * (fins - as.numeric(origine)))
   }
   p
 }

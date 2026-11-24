@@ -11,8 +11,7 @@
   stopifnot(is.character(titre), length(titre) == 1L, !is.na(titre))
   if (!is.null(sous_titre)) stopifnot(is.character(sous_titre), length(sous_titre) == 1L)
   if (!identical(logo, FALSE)) {
-    if (identical(logo, TRUE)) logo = 1L
-    image = .logo_code(logo)
+    image = .logo_parlementR()
     hauteur = grid::unit(1.2, "cm")
     largeur = grid::unit(1.2 * dim(image)[2L] / dim(image)[1L], "cm")
     grid::grid.raster(image, x = .875, y = .925,

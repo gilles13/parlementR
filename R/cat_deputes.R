@@ -121,18 +121,21 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
   # Provenance du jeu AMO10 utilise par cette fiche.
   source = .source_archive("deputes", tools::R_user_dir("parlementR", "cache"))
   suivi = tryCatch(.db_get_tibble(db,
-    "SELECT date_import, date_controle, md5 FROM suivi.actualisations WHERE jeu = 'deputes'"),
+    "SELECT date_import, date_controle, md5, sha256 FROM suivi.actualisations WHERE jeu = 'deputes'"),
     error = function(e) NULL)
   disponible = function(x) length(x) && !is.na(x[1]) && nzchar(as.character(x[1]))
   date_maj = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$date_import))
     format(as.POSIXct(suivi$date_import[1]), "%d/%m/%Y %H:%M") else "Non disponible"
   empreinte = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$md5))
     as.character(suivi$md5[1]) else "Non disponible"
+  empreinte_sha256 = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$sha256))
+    as.character(suivi$sha256[1]) else "Non disponible (actualiser les deputes)"
   metadonnees = c(
     "Jeu de donn\u00e9es" = "AMO10 - d\u00e9put\u00e9s actifs, mandats actifs et organes",
     "Date du document" = format(Sys.Date(), "%d/%m/%Y"),
     "Derni\u00e8re mise \u00e0 jour" = date_maj,
-    "MD5 de l'archive" = empreinte
+    "MD5 de l'archive" = empreinte,
+    "SHA-256 de l'archive" = empreinte_sha256
   )
   chemin = .pdf_catalogue_deputes_grid(
     deputes = deputes, metadonnees = metadonnees,

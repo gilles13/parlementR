@@ -49,6 +49,21 @@
 }
 
 .empreinte_archive = function(chemin) unname(tools::md5sum(chemin))
+# Empreinte SHA-256 de l archive brute ; jamais du contenu JSON extrait.
+# sha256sum appartient a GNU coreutils (aucune dependance R supplementaire).
+.sha256_archive = function(chemin) {
+  if (!file.exists(chemin)) stop("Archive introuvable : ", chemin)
+  outil = Sys.which("sha256sum")
+  if (!nzchar(outil)) stop("SHA-256 obligatoire : installer sha256sum (coreutils).")
+  sortie = suppressWarnings(system2(outil, shQuote(normalizePath(chemin)),
+                                     stdout = TRUE, stderr = FALSE))
+  statut = attr(sortie, "status")
+  if ((!is.null(statut) && statut != 0L) || length(sortie) != 1L ||
+      !grepl("^[0-9a-fA-F]{64}\\s", sortie))
+    stop("Impossible de calculer SHA-256 : ", chemin)
+  tolower(substr(sortie, 1L, 64L))
+}
+
 
 .zip_valide = function(chemin) {
   is.character(chemin) && length(chemin) == 1L && !is.na(chemin) &&

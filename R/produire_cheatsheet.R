@@ -94,6 +94,12 @@ produire_cheatsheet = function(simple = TRUE, sortie = "/tmp/parlementR-cheatshe
     if (any(hauteurs > 153)) warning('Colonnes depassant 153 mm : ', paste(which(hauteurs > 153), collapse=', '))
   }
   W = 297; H = 210
+  image_logo = .logo_parlementR()
+  dessiner_logo = function() {
+    grid::grid.raster(image_logo, x = grid::unit(279, "mm"),
+      y = grid::unit(H - 15, "mm"), height = grid::unit(18, "mm"),
+      width = grid::unit(18 * dim(image_logo)[2L] / dim(image_logo)[1L], "mm"))
+  }
   rect = function(x, y, w, h, fill, bord = NA, rayon = 0) grid::grid.roundrect(x = grid::unit(x, 'mm'), y = grid::unit(H-y-h, 'mm'), width = grid::unit(w, 'mm'), height = grid::unit(h, 'mm'), r = grid::unit(rayon, 'mm'), just = c('left','bottom'), gp = grid::gpar(fill = fill, col = bord, lwd = .7))
   trait = function(x1, y1, x2, y2, couleur = '#d8e2e8') grid::grid.lines(x = grid::unit(c(x1,x2), 'mm'), y = grid::unit(H-c(y1,y2), 'mm'), gp = grid::gpar(col = couleur, lwd = .8))
   texte = function(s, x, y, taille = police, couleur = '#1e3444', gras = FALSE, famille = 'sans') grid::grid.text(s, x = grid::unit(x, 'mm'), y = grid::unit(H-y, 'mm'), just = c('left','top'), gp = grid::gpar(fontsize = taille, col = couleur, fontface = if (gras) 'bold' else 'plain', fontfamily = famille))
@@ -130,6 +136,7 @@ produire_cheatsheet = function(simple = TRUE, sortie = "/tmp/parlementR-cheatshe
     grDevices::cairo_pdf(sortie, width = W / 25.4, height = H / 25.4, onefile = TRUE)
     on.exit(if (grDevices::dev.cur() > 1L) grDevices::dev.off(), add = TRUE)
     grid::grid.newpage()
+    dessiner_logo()
     texte("parlementR - Les commandes essentielles", 9, 8, 19, "#18344e", TRUE)
     texte("Guide rapide - donnees locales, recherches et rapports", 9, 20, 9, "#627789")
     trait(9, 29, 288, 29, "#226b9b")
@@ -150,6 +157,7 @@ produire_cheatsheet = function(simple = TRUE, sortie = "/tmp/parlementR-cheatshe
     on.exit(if (grDevices::dev.cur() > 1L) grDevices::dev.off(), add = TRUE)
     for (page in 1:5) {
       grid::grid.newpage()
+      dessiner_logo()
       texte('parlementR \u00B7 Guide de d\u00E9marrage',9,8,19,'#18344e',TRUE)
       texte(c('0 \u00B7 Pr\u00E9requis R et syst\u00E8me','D\u00E9couvrir \u00B7 D\u00E9put\u00E9s et premiers r\u00E9sultats','Explorer \u00B7 Sources parlementaires','\u00C9tendre \u00B7 S\u00E9nat et sources compl\u00E9mentaires','Approfondir \u00B7 DILA et LEGI')[page],9,20,9,'#627789')
       trait(9,29,288,29,'#226b9b')

@@ -2,12 +2,7 @@
 .pdf_catalogue_deputes_grid = function(deputes, metadonnees, source_url, fichier, enrichie) {
   if (!capabilities("cairo")) stop("Le support Cairo est necessaire.")
   W = 210; H = 297
-  bleu = "#183149"; gris = "#667686"; trait = "#DCE4EB"; fond = "#F3F6F9"
-  couleurs = .couleurs_groupes()
-  couleur = function(sigle) {
-    z = unname(couleurs[sigle])
-    if (is.na(z)) "#8996A3" else z
-  }
+  bleu = "#183149"; gris = "#667686"; trait = "#DCE4EB"; fond = "#E5E9ED"
   rect = function(x, y, w, h, fill) grid::grid.rect(
     x = grid::unit(x, "mm"), y = grid::unit(H-y-h, "mm"),
     width = grid::unit(w, "mm"), height = grid::unit(h, "mm"),
@@ -30,8 +25,8 @@
     grid::grid.newpage()
     page <<- page + 1L
     texte("Assembl\u00e9e nationale : composition", 17, 13, 11, bleu, TRUE)
-    image_logo = tryCatch(.logo_code(1L), error = function(e) NULL)
-    if (!is.null(image_logo)) grid::grid.raster(image_logo,
+    image_logo = .logo_parlementR()
+    grid::grid.raster(image_logo,
       x = grid::unit(185, "mm"), y = grid::unit(H - 16, "mm"),
       width = grid::unit(13, "mm"), height = grid::unit(13, "mm"),
       interpolate = TRUE)
@@ -44,10 +39,10 @@
   assurer = function(h) if (y + h > 272) nouvelle_page()
   groupe_ligne = function(nom, sigle, n) {
     assurer(16)
-    rect(17, y, 3, 10, couleur(sigle))
-    texte(paste0(nom, " (", sigle, ")"), 24, y + 1, 10, bleu, TRUE)
-    texte(paste(n, "d\u00e9put\u00e9s"), 24, y + 7, 8, gris)
-    y <<- y + 16
+    texte(paste0(nom, " (", sigle, ")"), 17, y + 1, 10, bleu, TRUE)
+    texte(paste(n, "d\u00e9put\u00e9s"), 17, y + 7, 8, gris)
+    rect(17, y + 13, 176, .35, trait)
+    y <<- y + 17
   }
   dir.create(dirname(fichier), recursive = TRUE, showWarnings = FALSE)
   grDevices::cairo_pdf(fichier, width = W / 25.4, height = H / 25.4,
@@ -55,37 +50,58 @@
   ferme = TRUE
   on.exit(if (ferme) grDevices::dev.off(), add = TRUE)
   nouvelle_page()
-  # M\u00e9tadonn\u00e9es de provenance : une seule fois, en haut de la premi\u00e8re page.
-  h_meta = 25
-  rect(17, y, 176, h_meta, "#E8EBEF")
-  for (i in seq_along(metadonnees)) {
-    yy = y + 2.1 + (i - 1) * 4.1
-    texte(names(metadonnees)[i], 21, yy, 7, gris, TRUE)
-    texte(unname(metadonnees[i]), 74, yy, 7, bleu)
-  }
-  if (length(source_url) == 1L && !is.na(source_url) && nzchar(source_url)) {
-    yy = y + 2.1 + length(metadonnees) * 4.1
-    texte("Document officiel", 21, yy, 7, gris, TRUE)
-    texte("Lien document officiel", 74, yy, 7, "#235E9B")
-    liens[[length(liens) + 1L]] = list(page = page, x = 74, haut = yy,
-      largeur = 62, url = source_url)
-  }
-  y = y + h_meta + 6
-  texte("Composition de l'Assembl\u00e9e nationale", 17, y, 15, bleu, TRUE)
-  y = y + 11
-  texte(paste(nrow(deputes), "d\u00e9put\u00e9s \u00b7", length(unique(deputes$sigle)), "groupes ou cat\u00e9gories"),
-    17, y, 10, gris)
-  y = y + 9
+  # Premiere page : provenance, puis repartition compacte.
   effectifs = stats::aggregate(uid ~ sigle + groupe, deputes, length)
   names(effectifs)[3] = "n"
   effectifs = effectifs[order(-effectifs$n, effectifs$groupe), , drop = FALSE]
+  bloc = .header_metadonnees(
+    metadonnees = metadonnees, source_url = source_url,
+    y = y, page = page, hauteur_page = H)
+  liens = c(liens, bloc$liens)
+  bloc_y = y
+  bloc_h = bloc$hauteur
+  y = bloc_y + bloc_h + 10
+  texte("R\u00e9partition par groupe", 17, y, 10, bleu, TRUE)
+  y = y + 8
+  texte(paste(nrow(deputes), "d\u00e9put\u00e9s"), 17, y, 11, bleu, TRUE)
+  texte(paste(nrow(effectifs), "groupes ou cat\u00e9gories"), 82, y + .5, 8, gris)
+  y = y + 10
+  # Trois colonnes, avec alignement numerique a droite.
+  x_n = 168
+  x_part = 192
+  texte("Groupe politique", 18, y, 7.2, gris, TRUE)
+  grid::grid.text("Effectif", x = grid::unit(x_n, "mm"),
+    y = grid::unit(H-y, "mm"), just = c("right", "top"),
+    gp = grid::gpar(fontfamily = "sans", fontsize = 7.2, col = gris, fontface = "bold"))
+  grid::grid.text("Part", x = grid::unit(x_part, "mm"),
+    y = grid::unit(H-y, "mm"), just = c("right", "top"),
+    gp = grid::gpar(fontfamily = "sans", fontsize = 7.2, col = gris, fontface = "bold"))
+  y = y + 5.5
+  rect(17, y - .8, 176, .3, trait)
   for (i in seq_len(nrow(effectifs))) {
-    assurer(7.5)
-    rect(17, y, 176, 6.7, couleur(effectifs$sigle[i]))
-    texte(paste0(effectifs$groupe[i], " (", effectifs$sigle[i], ")"), 21, y + 0.6, 9.3, "white", TRUE)
-    texte(effectifs$n[i], 182, y + 0.6, 9.3, "white", TRUE)
-    y = y + 7.5
+    texte(paste0(effectifs$groupe[i], " (", effectifs$sigle[i], ")"),
+      18, y, 8, bleu)
+    grid::grid.text(as.character(effectifs$n[i]),
+      x = grid::unit(x_n, "mm"), y = grid::unit(H-y, "mm"),
+      just = c("right", "top"),
+      gp = grid::gpar(fontfamily = "sans", fontsize = 8.2,
+        col = bleu, fontface = "bold"))
+    part = sprintf("%.1f %%", 100 * effectifs$n[i] / nrow(deputes))
+    part = sub("\\.", ",", part)
+    grid::grid.text(part, x = grid::unit(x_part, "mm"),
+      y = grid::unit(H-y, "mm"), just = c("right", "top"),
+      gp = grid::gpar(fontfamily = "sans", fontsize = 8, col = bleu))
+    rect(17, y + 4.2, 176, .13, trait)
+    y = y + 4.9
   }
+  texte("Ensemble", 18, y + .8, 8, bleu, TRUE)
+  grid::grid.text(as.character(nrow(deputes)),
+    x = grid::unit(x_n, "mm"), y = grid::unit(H-y-.8, "mm"),
+    just = c("right", "top"),
+    gp = grid::gpar(fontfamily = "sans", fontsize = 8.2, col = bleu, fontface = "bold"))
+  grid::grid.text("100,0 %", x = grid::unit(x_part, "mm"),
+    y = grid::unit(H-y-.8, "mm"), just = c("right", "top"),
+    gp = grid::gpar(fontfamily = "sans", fontsize = 8, col = bleu, fontface = "bold"))
   # Le sommaire occupe seul la premiere page.
   blocs = split(seq_len(nrow(deputes)), factor(deputes$sigle, levels = unique(deputes$sigle)))
   for (k in seq_along(blocs)) {
@@ -97,13 +113,13 @@
       if (isTRUE(deputes$president[i])) nom = paste0(nom, "  \u00b7  Pr\u00e9sidence du groupe")
       circo = deputes$circonscription[i]
       fonction = if (enrichie) couper(deputes$fonction[i], 92) else character()
-      h = 5.6 + length(fonction) * 3.6
+      h = 4.55 + length(fonction) * 3.3
       assurer(h)
-      texte(nom, 24, y, 8.4, bleu, isTRUE(deputes$president[i]))
+      texte(nom, 17, y, 8.4, bleu, isTRUE(deputes$president[i]))
       if (nzchar(circo)) texte(circo, 136, y, 7.7, gris)
       if (length(fonction)) for (j in seq_along(fonction))
-        texte(fonction[j], 26, y + 4.2 + (j-1) * 3.6, 7.2, gris)
-      rect(24, y + h - .7, 169, .15, trait)
+        texte(fonction[j], 26, y + 3.7 + (j-1) * 3.3, 7.2, gris)
+      rect(17, y + h - .35, 176, .12, trait)
       y = y + h
     }
     y = y + 2

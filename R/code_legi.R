@@ -86,7 +86,7 @@ rech_code = function(recherche = NULL, db = NULL) {
 }
 .legi_metadonnees = function(db, id_texte, id_article = NULL) {
   suivi = tryCatch(DBI::dbGetQuery(db, "SELECT date_import, md5 FROM suivi.actualisations WHERE jeu = 'legi'"), error = function(e) NULL)
-  extraction = if (!is.null(suivi) && nrow(suivi) && !is.na(suivi$date_import[[1L]])) format(as.Date(suivi$date_import[[1L]]), "%d/%m/%Y") else "non renseignee"
+  extraction = if (!is.null(suivi) && nrow(suivi) && !is.na(suivi$date_import[[1L]])) format(as.Date(suivi$date_import[[1L]], tz = "Europe/Paris"), "%d/%m/%Y") else "non renseignee"
   md5 = if (!is.null(suivi) && nrow(suivi) && !is.na(suivi$md5[[1L]])) suivi$md5[[1L]] else "non renseigne"
   url = if (is.null(id_article)) paste0("https://www.legifrance.gouv.fr/codes/texte_lc/", id_texte) else paste0("https://www.legifrance.gouv.fr/codes/article_lc/", id_article)
   list(extraction = extraction, md5 = md5, url = url, version = .legi_version_installee(db))

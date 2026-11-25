@@ -17,7 +17,7 @@ importer_legi = function(archive, db = NULL, verbose = TRUE) {
     stop("Cette premiere version exige l'archive globale LEGI")
   db = if (is.null(db)) connexion(creer = TRUE) else .connexion_valide(db)
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [LEGI] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [LEGI] ", ...)
   if (!identical(as.integer(system2("gzip", c("-t", shQuote(archive)),
                                     stdout = FALSE, stderr = FALSE)), 0L))
     stop("Archive LEGI invalide")
@@ -119,7 +119,7 @@ importer_legi = function(archive, db = NULL, verbose = TRUE) {
 # L'ordre et les periodes sont ceux des liens officiels, pas ceux des chemins.
 .completer_legi = function(archive, db, verbose = TRUE) {
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [LEGI] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [LEGI] ", ...)
   racine = "legi/global/code_et_TNC_en_vigueur/code_en_vigueur/"
   temporaire = tempfile("parlementR_legi_hierarchie_")
   dir.create(temporaire)
@@ -263,7 +263,7 @@ importer_legi = function(archive, db = NULL, verbose = TRUE) {
   if (!nzchar(Sys.which("pigz")) || !nzchar(Sys.which("tar")) ||
       !nzchar(Sys.which("bash"))) stop("Import LEGI : pigz, tar et bash requis")
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [LEGI] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [LEGI] ", ...)
   index = DBI::dbGetQuery(db, "SELECT id, fichier FROM legi.articles")
   n = nrow(index)
   if (!n || anyNA(index$id) || anyNA(index$fichier) ||

@@ -158,7 +158,7 @@ importer_jorf_cible = function(ids, archive, db = NULL, limite = 100L) {
     paste(DBI::dbQuoteString(db, ids), collapse = ', '), ')'))
   if (length(setdiff(ids, titres$id))) stop('JORF : textes absents de textes : ',
     paste(setdiff(ids, titres$id), collapse = ', '))
-  journal = function(...) message('[', format(Sys.time(), '%Y-%m-%d %H:%M:%S'),
+  journal = function(...) message('[', format(Sys.time(), '%Y-%m-%d %H:%M:%S', tz = 'Europe/Paris'),
                                   '] [JORF] ', ...)
   journal('Extraction des structures de ', length(ids), ' textes')
   structures = .jorf_cible_extraire(archive, 'struct', ids)

@@ -21,7 +21,7 @@ importer_ameli = function(db = NULL, archive, remplacer = FALSE,
     stop("'taille_lot' doit etre un entier positif")
   db = if (is.null(db)) connexion(creer = TRUE) else .connexion_valide(db)
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [AMELI] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [AMELI] ", ...)
   outils = c("initdb", "pg_ctl", "psql", "unzip")
   if (any(!nzchar(Sys.which(outils))))
     stop("Executables requis : ", paste(outils, collapse = ", "))

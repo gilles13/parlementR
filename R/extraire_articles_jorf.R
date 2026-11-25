@@ -17,7 +17,7 @@ extraire_articles_jorf = function(ids, archive, dossier = "~/.cache/R/parlementR
   index = path.expand(index)
   if (!file.exists(archive) || !file.exists(index)) stop("Archive ou index local introuvable")
   if (length(ids) > limite) stop("Nombre de textes superieur a limite")
-  journal = function(...) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [JORF] ", ...)
+  journal = function(...) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [JORF] ", ...)
   chemins = readLines(index, warn = FALSE)
   chemins = chemins[grepl("\\.xml$", chemins, ignore.case = TRUE)]
   # Une archive peut contenir plusieurs representations du meme identifiant.

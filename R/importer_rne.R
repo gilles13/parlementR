@@ -22,7 +22,7 @@ importer_rne = function(cache = tools::R_user_dir("parlementR", "cache"),
   )
   precedent = if (file.exists(manifeste)) readRDS(manifeste) else data.frame()
   journal = function(jeu, ...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] RNE ",
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] RNE ",
     toupper(jeu), " : ", ...)
   resultat = vector("list", length(sources))
   names(resultat) = names(sources)

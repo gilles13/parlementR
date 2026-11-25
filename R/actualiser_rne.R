@@ -3,7 +3,7 @@
 .actualiser_rne = function(db, cache, forcer = FALSE, verbose = TRUE,
                            autoriser_regression = FALSE) {
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] RNE : ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] RNE : ", ...)
   meta = importer_rne(cache = cache, forcer = forcer, verbose = verbose)
   attendus = c(deputes = "rne_deputes", senateurs = "rne_senateurs")
   if (!setequal(meta$jeu, unname(attendus)) || anyDuplicated(meta$jeu))
@@ -16,13 +16,14 @@
     if (!file.exists(fichier) || !identical(unname(tools::md5sum(fichier)), ligne$md5[[1L]]))
       stop("Fichier RNE absent ou different du manifeste : ", jeu)
     precedent = DBI::dbGetQuery(db,
-      "SELECT md5, modification FROM suivi.actualisations WHERE jeu = ?",
+      "SELECT md5, sha256, modification FROM suivi.actualisations WHERE jeu = ?",
       params = list(jeu))
     table_id = DBI::Id(schema = "rne", table = nom)
     presente = DBI::dbExistsTable(db, table_id)
     if (presente && nrow(precedent) && identical(precedent$md5[[1L]], ligne$md5[[1L]])) {
+      .suivi_sha256(db, jeu, fichier)
       DBI::dbExecute(db,
-        "UPDATE suivi.actualisations SET date_controle = current_timestamp WHERE jeu = ?",
+        "UPDATE suivi.actualisations SET date_controle = (current_timestamp AT TIME ZONE 'UTC') WHERE jeu = ?",
         params = list(jeu))
       journal(toupper(nom), " : MD5 identique, aucun import")
       next
@@ -32,12 +33,13 @@
     if (presente && !autoriser_regression) {
       ancien = if (nrow(precedent)) precedent$modification[[1L]] else NA_character_
       nouveau = ligne$modification[[1L]]
-      a = suppressWarnings(as.POSIXct(ancien, format = "%a, %d %b %Y %H:%M:%S GMT", tz = "GMT"))
-      b = suppressWarnings(as.POSIXct(nouveau, format = "%a, %d %b %Y %H:%M:%S GMT", tz = "GMT"))
+      a = .date_http(ancien)
+      b = .date_http(nouveau)
       if (!nrow(precedent) || is.na(a) || is.na(b) || b < a)
         stop("Chronologie RNE non verifiable ou regression pour ", jeu,
              "; utiliser autoriser_regression = TRUE si voulu")
     }
+    sha256 = .sha256_archive(fichier)
     donnees = utils::read.csv2(fichier, check.names = FALSE,
       fileEncoding = "UTF-8-BOM", colClasses = "character")
     colonnes = c("Nom de l'\u00e9lu", "Pr\u00e9nom de l'\u00e9lu", "Date de naissance",
@@ -56,12 +58,12 @@
       DBI::dbWriteTable(db, table_id, donnees, overwrite = TRUE)
       DBI::dbExecute(db, paste0(
         "INSERT INTO suivi.actualisations ",
-        "(jeu, date_import, date_controle, md5, etag, modification) ",
-        "VALUES (?, current_timestamp, current_timestamp, ?, ?, ?) ",
+        "(jeu, date_import, date_controle, md5, sha256, etag, modification) ",
+        "VALUES (?, (current_timestamp AT TIME ZONE 'UTC'), (current_timestamp AT TIME ZONE 'UTC'), ?, ?, ?, ?) ",
         "ON CONFLICT (jeu) DO UPDATE SET date_import = excluded.date_import, ",
-        "date_controle = excluded.date_controle, md5 = excluded.md5, ",
+        "date_controle = excluded.date_controle, md5 = excluded.md5, sha256 = excluded.sha256, ",
         "etag = excluded.etag, modification = excluded.modification"),
-        params = list(jeu, ligne$md5[[1L]], ligne$etag[[1L]], ligne$modification[[1L]]))
+        params = list(jeu, ligne$md5[[1L]], sha256, ligne$etag[[1L]], ligne$modification[[1L]]))
       DBI::dbCommit(db)
     }, error = function(e) {
       DBI::dbRollback(db)

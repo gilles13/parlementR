@@ -94,7 +94,7 @@ importer_dosleg = function(db = NULL, archive, remplacer = FALSE,
   taille_lot = as.integer(taille_lot)
   con = if (is.null(db)) connexion(creer = TRUE) else .connexion_valide(db)
   journal = function(...) if (isTRUE(verbose)) {
-    message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [DOSLEG] ", ...)
+    message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [DOSLEG] ", ...)
   }
   if (!identical(as.integer(system2("unzip", c("-tq", shQuote(archive)),
                                     stdout = FALSE, stderr = FALSE)), 0L))

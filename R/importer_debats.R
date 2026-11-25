@@ -32,7 +32,7 @@
 # Importer les debats dans la connexion et la transaction d'actualiser().
 .importer_debats = function(con, fichier, remplacer = FALSE, verbose = TRUE) {
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [DEBATS] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [DEBATS] ", ...)
   if (!file.exists(fichier)) stop("Archive Syceron introuvable : ", fichier)
   journal("Debut de l'importation : ", fichier)
   membres = utils::unzip(fichier, list = TRUE)

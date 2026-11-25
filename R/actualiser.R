@@ -5,7 +5,7 @@
 #' @param cache Repertoire de cache persistant.
 #' @param archive Chemin facultatif vers une archive locale (un seul jeu). Pour LEGI,
 #'   archive globale ou quotidienne tar.gz ; sans archive, telechargement DILA.
-#' @param forcer Ignorer le delai de 24 heures et verifier le serveur ; ne force pas l'import si l'archive est inchangee.
+#' @param forcer Ignorer le delai de controle (30 jours pour les photos, 7 jours pour AMELI, 24 heures pour les autres jeux soumis a ce delai) et verifier le serveur ; ne force pas l'import si l'archive est inchangee.
 #' @param autoriser_regression Autoriser explicitement la restauration d'une archive locale differente ou d'anciennete inconnue. FALSE par defaut.
 #' @param verbose Afficher les etapes (par defaut TRUE).
 #' @export
@@ -60,7 +60,7 @@ actualiser = function(db = NULL, jeux = "deputes",
   )
   for (jeu in jeux) {
     journal = function(...) if (isTRUE(verbose)) message(
-      "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [", toupper(jeu), "] ", ...)
+      "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [", toupper(jeu), "] ", ...)
     journal("Debut de l'actualisation")
     if (jeu %in% c("photos_an", "photos_senat")) {
       if (!is.null(archive)) stop("Les photographies n'acceptent pas 'archive'.")
@@ -93,6 +93,10 @@ actualiser = function(db = NULL, jeux = "deputes",
       heures_dole = if (nrow(precedent_dole)) as.numeric(difftime(
         Sys.time(), as.POSIXct(precedent_dole$dernier[1], tz = "UTC"),
         units = "hours")) else Inf
+      if (DBI::dbExistsTable(db, DBI::Id(schema = "dila_dole", table = "archives"))) {
+        DBI::dbExecute(db, "ALTER TABLE dila_dole.archives ADD COLUMN IF NOT EXISTS sha256 VARCHAR")
+        .completer_dole_sha256(db, file.path(cache, "dila_dole"))
+      }
       if (!forcer && nrow(precedent_dole) &&
           DBI::dbExistsTable(db, DBI::Id(schema = "dila_dole", table = "archives")) &&
           DBI::dbExistsTable(db, DBI::Id(schema = "dila_dole", table = "dossiers")) &&
@@ -109,7 +113,7 @@ actualiser = function(db = NULL, jeux = "deputes",
       changement_dole = !identical(avant_dole, apres_dole)
       DBI::dbExecute(db, paste0(
         "INSERT INTO suivi.actualisations (jeu, date_import, date_controle) ",
-        "VALUES ('dole', current_timestamp, current_timestamp) ",
+        "VALUES ('dole', (current_timestamp AT TIME ZONE 'UTC'), (current_timestamp AT TIME ZONE 'UTC')) ",
         "ON CONFLICT (jeu) DO UPDATE SET date_import = CASE WHEN ? THEN excluded.date_import ELSE suivi.actualisations.date_import END, ",
         "date_controle = excluded.date_controle"), params = list(changement_dole))
       journal("Actualisation terminee")
@@ -119,10 +123,12 @@ actualiser = function(db = NULL, jeux = "deputes",
       "SELECT coalesce(date_controle, date_import) AS dernier, md5, sha256, etag, modification ",
       "FROM suivi.actualisations WHERE jeu = ?"), params = list(jeu))
     presentes = .jeu_present(db, jeu, tables[[jeu]])
+    cache_ok = is.null(archive) && nrow(precedent) > 0L &&
+      .cache_importe(.source_archive(jeu, cache)$chemin, precedent$md5[1])
     delai = if (jeu == "ameli") 24 * 7 else 24
     heures = if (nrow(precedent)) as.numeric(difftime(Sys.time(),
       as.POSIXct(precedent$dernier[1], tz = "UTC"), units = "hours")) else Inf
-    if (!forcer && is.null(archive) && presentes && is.finite(heures) &&
+    if (!forcer && is.null(archive) && presentes && cache_ok && is.finite(heures) &&
         heures >= 0 && heures < delai) {
       journal("Controle recent (< ", delai, " h) : aucun acces reseau, aucun import")
       next
@@ -147,20 +153,26 @@ actualiser = function(db = NULL, jeux = "deputes",
         modification = precedent$modification[1]
 
       }
+      recu = if (!cache_ok) .telechargement_cache(db, jeu, info$url, info$chemin) else NULL
+      if (!is.null(recu)) {
+        etag = recu$etag
+        modification = recu$modification
+      }
       controle = .verifier_archive(info$url, etag, modification,
                                    verbose = verbose, jeu = jeu)
-      if (presentes && isTRUE(controle$inchange)) {
+      if (presentes && cache_ok && isTRUE(controle$inchange)) {
         journal("Archive inchangee (HTTP ", controle$code,
                 ") : aucun telechargement, aucune extraction, aucun import")
         DBI::dbExecute(db, paste0(
-          "UPDATE suivi.actualisations SET date_controle = current_timestamp, ",
+          "UPDATE suivi.actualisations SET date_controle = (current_timestamp AT TIME ZONE 'UTC'), ",
           "etag = coalesce(?, etag), modification = coalesce(?, modification) WHERE jeu = ?"),
           params = list(controle$etag, controle$modification, jeu))
         next
       }
       journal(if (presentes) "Nouvelle version ou controle non concluant" else
                 "Tables absentes : import initial necessaire")
-      meta = .telecharger_archive(info$url, info$chemin, verbose = verbose, jeu = jeu)
+      meta = if (!is.null(recu) && isTRUE(controle$inchange)) recu else
+        .telecharger_archive(info$url, info$chemin, verbose = verbose, jeu = jeu, db = db)
       etag = meta$etag
       modification = meta$modification
       chemin_archive = info$chemin
@@ -169,8 +181,8 @@ actualiser = function(db = NULL, jeux = "deputes",
       journal("Archive locale fournie : ", archive)
     }
     if (!.zip_valide(chemin_archive)) stop("Archive ZIP invalide : ", chemin_archive)
-    empreinte = .empreinte_archive(chemin_archive)
-    sha256 = .sha256_archive(chemin_archive)
+    empreinte = if (is.null(archive)) meta$md5 else .empreinte_archive(chemin_archive)
+    sha256 = if (is.null(archive)) meta$sha256 else .sha256_archive(chemin_archive)
     if (is.null(archive) && presentes && nrow(precedent) &&
         !is.na(precedent$md5[1]) && identical(empreinte, precedent$md5[1])) {
       .suivi_controle(db, jeu, etag, modification)
@@ -214,11 +226,11 @@ actualiser = function(db = NULL, jeux = "deputes",
     DBI::dbExecute(db, paste0(
       "INSERT INTO suivi.actualisations ",
       "(jeu, date_import, date_controle, md5, sha256, etag, modification) ",
-      "VALUES (?, current_timestamp, current_timestamp, ?, ?, ?, ?) ",
+      "VALUES (?, (current_timestamp AT TIME ZONE 'UTC'), CASE WHEN ? THEN (current_timestamp AT TIME ZONE 'UTC') ELSE NULL END, ?, ?, ?, ?) ",
       "ON CONFLICT (jeu) DO UPDATE SET date_import = excluded.date_import, ",
-      "date_controle = excluded.date_controle, md5 = excluded.md5, ",
+      "date_controle = coalesce(excluded.date_controle, suivi.actualisations.date_controle), md5 = excluded.md5, ",
       "sha256 = excluded.sha256, etag = excluded.etag, modification = excluded.modification"),
-      params = list(jeu, empreinte, sha256, etag, modification))
+      params = list(jeu, is.null(archive), empreinte, sha256, etag, modification))
     journal("Actualisation terminee")
   }
   invisible(TRUE)

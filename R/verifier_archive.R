@@ -80,7 +80,7 @@
 }
 
 # Le GET n'est appele qu'apres une verification HEAD non concluante.
-.telecharger_archive = function(url, chemin, verbose = TRUE, jeu = "ARCHIVE") {
+.telecharger_archive = function(url, chemin, verbose = TRUE, jeu = "ARCHIVE", db = NULL) {
   journal = function(...) if (isTRUE(verbose)) message("[", toupper(jeu), "] ", ...)
   dir.create(dirname(chemin), recursive = TRUE, showWarnings = FALSE)
   temporaire = tempfile("parlementR-archive-", tmpdir = dirname(chemin), fileext = ".zip")
@@ -111,5 +111,6 @@
   }
   if (file.exists(sauvegarde)) unlink(sauvegarde)
   journal("ZIP conserve dans le cache : ", chemin)
+  if (!is.null(db)) meta = .memoriser_telechargement(db, jeu, url, chemin, meta)
   meta
 }

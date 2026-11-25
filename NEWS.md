@@ -1,3 +1,17 @@
+# parlementR 0.1.1
+
+- Renforcement de la traçabilité des fichiers sources par le calcul systématique des empreintes MD5 et SHA-256, hors photographies.
+- Séparation du suivi des téléchargements et des importations dans DuckDB, avec création de la table `suivi.telechargements`.
+- Distinction entre les dates de contrôle distant, de téléchargement et d'importation.
+- Harmonisation de la gestion des dates : stockage en UTC, affichage en heure française (`Europe/Paris`) et prise en compte automatique des changements d'heure.
+- Interprétation des dates HTTP indépendante des paramètres régionaux du système.
+- Optimisation des contrôles distants afin d'éviter les téléchargements et les réimportations inutiles.
+- Amélioration du suivi individuel des archives des questions de l'Assemblée nationale, de DOLE et de LEGI.
+- Téléchargement parallèle des photographies des députés et des sénateurs.
+- Contrôle périodique des photographies et téléchargement ciblé des fichiers manquants ou invalides.
+- Réduction des accès réseau et des temps d'actualisation.
+- Rationalisation des mécanismes internes de téléchargement, de contrôle et de suivi des sources.
+
 # parlementR 0.1.0
 
 - Add historical datasets for French heads of state and major events.

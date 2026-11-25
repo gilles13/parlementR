@@ -94,7 +94,7 @@ cat_senateurs = function(
                      check.names = FALSE)
   chemin = .pdf_questions_senat("annuaire_senateurs.Rmd",
     list(donnees = donnees, recap = recap, type = type), titres[[type]],
-    paste0("Source : S\u00E9nat - extraction locale du ", format(Sys.time(), "%d/%m/%Y")), sortie)
+    paste0("Source : S\u00E9nat - extraction locale du ", format(Sys.time(), "%d/%m/%Y", tz = "Europe/Paris")), sortie)
   .ouvrir_pdf(chemin, ouvrir)
   invisible(chemin)
 }

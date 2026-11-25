@@ -75,6 +75,7 @@ connexion = function(chemin = NULL, creer = FALSE) {
     if (isTRUE(tryCatch(DBI::dbIsValid(db), error = function(e) FALSE))) {
       if (identical(.connexions$chemin, chemin)) {
         .migrer_schemas_amo(db)
+        .initialiser_telechargements(db)
         return(db)
       }
       stop("Une connexion vers une autre base est deja ouverte. ",
@@ -115,6 +116,7 @@ Executer actualiser() pour initialiser la base.")
          "Detail : ", conditionMessage(erreur_icu), call. = FALSE)
   }
   .migrer_schemas_amo(db)
+  .initialiser_telechargements(db)
   .connexions$db = db
   .connexions$chemin = chemin
   db

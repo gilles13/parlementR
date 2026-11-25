@@ -26,7 +26,7 @@ archive globale ou quotidienne tar.gz ; sans archive, telechargement DILA.}
 
 \item{verbose}{Afficher les etapes (par defaut TRUE).}
 
-\item{forcer}{Ignorer le delai de 24 heures et verifier le serveur ; ne force pas l'import si l'archive est inchangee.}
+\item{forcer}{Ignorer le delai de controle (30 jours pour les photos, 7 jours pour AMELI, 24 heures pour les autres jeux soumis a ce delai) et verifier le serveur ; ne force pas l'import si l'archive est inchangee.}
 
 \item{autoriser_regression}{Autoriser explicitement la restauration d'une archive locale differente ou d'anciennete inconnue. FALSE par defaut.}
 }

@@ -68,16 +68,17 @@
     dernier = dernier[!is.na(dernier)]
     if (!length(dernier)) next
 
+    delai = if (jeu %in% c("photos_an", "photos_senat")) 30 else 7
     if (as.numeric(difftime(Sys.time(),
                             as.POSIXct(max(dernier), origin = "1970-01-01", tz = "UTC"),
-                            units = "days")) > 7) {
+                            units = "days")) >= delai) {
       retard = c(retard, jeu)
     }
   }
 
   if (length(retard)) {
     packageStartupMessage("parlementR : ", length(retard),
-                          " jeu(x) a actualiser (plus de 7 jours) :")
+                          " jeu(x) a actualiser (7 jours ; photos : 30 jours) :")
     largeur = max(nchar(retard))
     for (jeu in retard) {
       packageStartupMessage("  ", format(jeu, width = largeur, justify = "left"),

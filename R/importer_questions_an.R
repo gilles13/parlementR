@@ -60,7 +60,7 @@
     DBI::dbRollback(db)
     stop(e)
   })
-  if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+  if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"),
                        "] [QUESTIONS_AN] Questions importees : ", controle$n)
   invisible(controle$n)
 }
@@ -70,7 +70,7 @@
                                     forcer = FALSE, verbose = TRUE,
                                     autoriser_regression = FALSE) {
   journal = function(...) if (verbose) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [QUESTIONS_AN] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [QUESTIONS_AN] ", ...)
   racine = paste0("https://data.assemblee-nationale.fr/",
                   "static/openData/repository/17/questions/")
   chemins = c(ecrites = "questions_ecrites/Questions_ecrites.json.zip",
@@ -103,6 +103,8 @@
           identical(ancien$md5[[1L]], .empreinte_archive(destination[[type]]))
       }, logical(1))
       if (all(identiques)) {
+        for (type in names(destination))
+          .suivi_sha256(db, paste0("questions_an_", type), destination[[type]])
         journal("Archives locales identiques : aucun import")
         return(invisible(TRUE))
       }
@@ -112,69 +114,88 @@
     }
   }
   precedent = .db_get_tibble(db, paste0(
-    "SELECT jeu, coalesce(date_controle, date_import) AS dernier, etag, modification ",
+    "SELECT jeu, coalesce(date_controle, date_import) AS dernier, md5, etag, modification ",
     "FROM suivi.actualisations WHERE jeu IN ",
     "('questions_an_ecrites','questions_an_orales','questions_an_gouvernement')"))
   metas = vector("list", length(chemins))
   names(metas) = names(chemins)
   change = !presente || !is.null(archive)
-  modifies = stats::setNames(rep(!presente || !is.null(archive), length(chemins)), names(chemins))
   for (type in names(chemins)) {
     jeu = paste0("questions_an_", type)
     ligne = precedent[precedent$jeu == jeu, , drop = FALSE]
     etag = if (nrow(ligne)) ligne$etag[1] else NA_character_
     modification = if (nrow(ligne)) ligne$modification[1] else NA_character_
     metas[[type]] = list(etag = etag, modification = modification)
-    if (!is.null(archive)) next
+    if (!is.null(archive)) {
+      metas[[type]] = list(etag = NA_character_, modification = NA_character_)
+      next
+    }
     heures = if (nrow(ligne)) as.numeric(difftime(
       Sys.time(), as.POSIXct(ligne$dernier[1], tz = "UTC"), units = "hours")) else Inf
-    if (!forcer && presente && file.exists(destination[[type]]) &&
+    cache_ok = nrow(ligne) > 0L && .cache_importe(destination[[type]], ligne$md5[1])
+    if (!forcer && presente && cache_ok &&
         is.finite(heures) && heures >= 0 && heures < 24) next
     url = paste0(racine, chemins[[type]])
+    recu = if (!cache_ok) .telechargement_cache(db, jeu, url, destination[[type]]) else NULL
+    if (!is.null(recu)) {
+      etag = recu$etag
+      modification = recu$modification
+    }
     controle = .verifier_archive(url, etag, modification,
                                  verbose = verbose, jeu = jeu)
     metas[[type]] = list(etag = controle$etag,
                           modification = controle$modification)
-    if (presente && file.exists(destination[[type]]) && isTRUE(controle$inchange)) next
+    if (presente && cache_ok && isTRUE(controle$inchange)) {
+      .suivi_controle(db, jeu, controle$etag, controle$modification)
+      next
+    }
     journal("Telechargement : ", type)
-    .telecharger_questions_an(url, destination[[type]])
-    modifies[[type]] = TRUE
+    metas[[type]] = if (!is.null(recu) && isTRUE(controle$inchange)) recu else
+      .telecharger_questions_an(url, destination[[type]], db, jeu)
     change = TRUE
   }
   if (!change) {
     journal("Archives inchangees : aucun import")
-  } else {
-    .importer_questions_an(db, destination, verbose = verbose)
+    return(invisible(TRUE))
   }
+  empreintes = lapply(names(destination), function(type) {
+    meta = metas[[type]]
+    if (!is.null(meta$sha256)) return(meta)
+    list(md5 = .empreinte_archive(destination[[type]]),
+         sha256 = .sha256_archive(destination[[type]]))
+  })
+  names(empreintes) = names(destination)
+  .importer_questions_an(db, destination, verbose = verbose)
   for (type in names(chemins)) {
     jeu = paste0("questions_an_", type)
     meta = metas[[type]]
-    empreinte = if (file.exists(destination[[type]])) .empreinte_archive(destination[[type]]) else NA_character_
+    empreinte = empreintes[[type]]
     DBI::dbExecute(db, paste0(
       "INSERT INTO suivi.actualisations ",
-      "(jeu, date_import, date_controle, md5, etag, modification) ",
-      "VALUES (?, current_timestamp, current_timestamp, ?, ?, ?) ",
-      "ON CONFLICT (jeu) DO UPDATE SET ",
-      "date_import = CASE WHEN ? THEN excluded.date_import ELSE suivi.actualisations.date_import END, ",
-      "date_controle = excluded.date_controle, ",
-      "md5 = CASE WHEN ? THEN excluded.md5 ELSE suivi.actualisations.md5 END, ",
-      "etag = coalesce(excluded.etag, suivi.actualisations.etag), ",
-      "modification = coalesce(excluded.modification, suivi.actualisations.modification)"),
-      params = list(jeu, empreinte, meta$etag, meta$modification,
-                    modifies[[type]], modifies[[type]]))
+      "(jeu, date_import, date_controle, md5, sha256, etag, modification) ",
+      "VALUES (?, (current_timestamp AT TIME ZONE 'UTC'), ",
+      "CASE WHEN ? THEN (current_timestamp AT TIME ZONE 'UTC') ELSE NULL END, ?, ?, ?, ?) ",
+      "ON CONFLICT (jeu) DO UPDATE SET date_import = excluded.date_import, ",
+      "date_controle = coalesce(excluded.date_controle, suivi.actualisations.date_controle), ",
+      "md5 = excluded.md5, sha256 = excluded.sha256, ",
+      "etag = excluded.etag, modification = excluded.modification"),
+      params = list(jeu, !is.null(meta$sha256), empreinte$md5, empreinte$sha256,
+                    meta$etag, meta$modification))
   }
   journal("Actualisation terminee")
   invisible(TRUE)
 }
 
 # Conserve les fragments .part entre tentatives, valide avant remplacement.
-.telecharger_questions_an = function(url, chemin) {
+.telecharger_questions_an = function(url, chemin, db, jeu) {
   dir.create(dirname(chemin), recursive = TRUE, showWarnings = FALSE)
   partiel = paste0(chemin, ".part")
+  entetes = tempfile()
+  on.exit(unlink(entetes), add = TRUE)
   statut = system2("curl", c(
     "-fL", "-C", "-", "--retry", "10", "--retry-all-errors",
     "--retry-delay", "5", "--connect-timeout", "30",
-    "-o", shQuote(partiel), shQuote(url)), stdout = "", stderr = "")
+    "-D", shQuote(entetes), "-o", shQuote(partiel), shQuote(url)), stdout = "", stderr = "")
   if (statut != 0L) stop("Telechargement interrompu : ", url)
   if (system2("unzip", c("-tq", shQuote(partiel)),
               stdout = FALSE, stderr = FALSE) != 0L)
@@ -188,7 +209,7 @@
     stop("Impossible de conserver : ", chemin)
   }
   if (file.exists(sauvegarde)) unlink(sauvegarde)
-  invisible(chemin)
+  .memoriser_telechargement(db, jeu, url, chemin, .entetes_archive(entetes))
 }
 
 #' Importer les questions de l'Assemblee nationale depuis trois archives locales

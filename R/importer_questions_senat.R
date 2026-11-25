@@ -40,7 +40,7 @@ importer_questions_senat = function(archive, db = NULL, remplacer = FALSE, verbo
   attendu = c("etatquestion", "legquestion", "naturequestion", "sortquestion",
               "tam_ministeres", "tam_questions", "tam_reponses", "the")
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [QUESTIONS_SENAT] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [QUESTIONS_SENAT] ", ...)
   lecteur = unz(archive, "questions.sql", open = "r")
   on.exit(if (inherits(lecteur, "connection") && isOpen(lecteur)) close(lecteur), add = TRUE)
   definitions = .dosleg_structure(lecteur)

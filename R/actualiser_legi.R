@@ -1,6 +1,6 @@
 # Synchronisation des archives LEGI de la DILA.
 .legi_journal = function(verbose, ...) if (isTRUE(verbose))
-  message('[', format(Sys.time(), '%Y-%m-%d %H:%M:%S'), '] [LEGI] ', ...)
+  message('[', format(Sys.time(), '%Y-%m-%d %H:%M:%S', tz = 'Europe/Paris'), '] [LEGI] ', ...)
 
 .legi_archives = function() {
   url = 'https://echanges.dila.gouv.fr/OPENDATA/LEGI/'
@@ -19,7 +19,7 @@
              url = paste0(url, noms), stringsAsFactors = FALSE)
 }
 
-.legi_telecharger = function(url, cache, verbose = TRUE) {
+.legi_telecharger = function(url, cache, verbose = TRUE, db) {
   dir.create(cache, recursive = TRUE, showWarnings = FALSE)
   destination = file.path(cache, basename(url))
   # Ne pas confondre fichier partiel et archive valide.
@@ -35,6 +35,7 @@
   if (!identical(as.integer(system2('gzip', c('-t', shQuote(destination)),
                                     stdout = FALSE, stderr = FALSE)), 0L))
     stop('LEGI : archive corrompue : ', destination)
+  .memoriser_telechargement(db, "legi", url, destination)
   destination
 }
 
@@ -44,27 +45,30 @@
     'CREATE TABLE IF NOT EXISTS suivi.archives_legi (',
     'archive VARCHAR PRIMARY KEY, type VARCHAR NOT NULL, ',
     'horodatage VARCHAR NOT NULL, md5 VARCHAR NOT NULL, ',
-    'date_import TIMESTAMP NOT NULL DEFAULT current_timestamp, ',
+    'date_import TIMESTAMP NOT NULL DEFAULT (current_timestamp AT TIME ZONE \'UTC\'), ',
     'nb_xml BIGINT NOT NULL, nb_suppressions BIGINT NOT NULL)'))
+  DBI::dbExecute(db, 'ALTER TABLE suivi.archives_legi ADD COLUMN IF NOT EXISTS sha256 VARCHAR')
 }
 
 .legi_enregistrer = function(db, archive, nb_xml, nb_suppressions = 0L) {
+  md5 = .empreinte_archive(archive)
+  sha256 = .sha256_archive(archive)
   nom = basename(archive)
   horodatage = sub('.*?([0-9]{8}-[0-9]{6})\\.tar\\.gz', '\\1', nom)
   if (!grepl('^[0-9]{8}-[0-9]{6}$', horodatage)) stop('Nom LEGI inattendu')
   DBI::dbExecute(db, paste0(
     'INSERT INTO suivi.archives_legi ',
-    '(archive, type, horodatage, md5, nb_xml, nb_suppressions) ',
-    'VALUES (?, ?, ?, ?, ?, ?)'),
+    '(archive, type, horodatage, md5, sha256, nb_xml, nb_suppressions) ',
+    'VALUES (?, ?, ?, ?, ?, ?, ?)'),
     params = list(nom, if (startsWith(nom, 'Freemium_')) 'globale' else 'quotidienne',
-                  horodatage, unname(tools::md5sum(archive)),
+                  horodatage, md5, sha256,
                   as.numeric(nb_xml), as.numeric(nb_suppressions)))
   DBI::dbExecute(db, paste0(
-    'INSERT INTO suivi.actualisations (jeu, date_import, date_controle, md5) ',
-    "VALUES ('legi', current_timestamp, current_timestamp, ?) ",
+    'INSERT INTO suivi.actualisations (jeu, date_import, date_controle, md5, sha256) ',
+    "VALUES ('legi', (current_timestamp AT TIME ZONE 'UTC'), (current_timestamp AT TIME ZONE 'UTC'), ?, ?) ",
     'ON CONFLICT (jeu) DO UPDATE SET date_import = excluded.date_import, ',
-    'date_controle = excluded.date_controle, md5 = excluded.md5'),
-    params = list(unname(tools::md5sum(archive))))
+    'date_controle = excluded.date_controle, md5 = excluded.md5, sha256 = excluded.sha256'),
+    params = list(md5, sha256))
 }
 
 .legi_valeur = function(doc, xpath) {
@@ -252,13 +256,24 @@
     reference = basename(correspond)
     DBI::dbExecute(db, paste0(
       'INSERT INTO suivi.archives_legi ',
-      '(archive, type, horodatage, md5, nb_xml, nb_suppressions) ',
-      'VALUES (?, ?, ?, ?, 0, 0)'),
+      '(archive, type, horodatage, md5, sha256, nb_xml, nb_suppressions) ',
+      'VALUES (?, ?, ?, ?, ?, 0, 0)'),
       params = list(reference, 'globale',
         sub('.*?([0-9]{8}-[0-9]{6})\\.tar\\.gz', '\\1', reference),
-        unname(tools::md5sum(correspond))))
+        unname(tools::md5sum(correspond)), .sha256_archive(correspond)))
     suivi = DBI::dbGetQuery(db, 'SELECT * FROM suivi.archives_legi')
   }
+  for (i in which(is.na(suivi$sha256))) {
+    fichier = file.path(repertoire, suivi$archive[i])
+    if (!is.null(archive) && basename(archive) == suivi$archive[i]) fichier = archive
+    sha = .sha256_verifie(fichier, suivi$md5[i])
+    if (!is.na(sha)) DBI::dbExecute(db,
+      'UPDATE suivi.archives_legi SET sha256 = ? WHERE archive = ?',
+      params = list(sha, suivi$archive[i]))
+  }
+  DBI::dbExecute(db, paste0("UPDATE suivi.actualisations SET sha256 = a.sha256 ",
+    "FROM suivi.archives_legi a WHERE jeu = 'legi' AND suivi.actualisations.md5 = a.md5 ",
+    "AND suivi.actualisations.sha256 IS NULL AND a.sha256 IS NOT NULL"))
   if (!is.null(archive)) {
     if (!file.exists(archive)) stop('Archive LEGI introuvable : ', archive)
     nom = basename(archive)
@@ -291,7 +306,7 @@
         stop('LEGI : archive absente de l inventaire DILA')
       for (precedente in utils::head(attendues, -1L)) {
         adresse = inventaire$url[match(precedente, inventaire$nom)]
-        fichier = .legi_telecharger(adresse, repertoire, verbose)
+        fichier = .legi_telecharger(adresse, repertoire, verbose, db)
         .legi_quotidienne(db, fichier, verbose)
       }
       .legi_quotidienne(db, archive, verbose)
@@ -303,7 +318,7 @@
     globales = inventaire[inventaire$globale, , drop = FALSE]
     if (!nrow(globales)) stop('LEGI : aucune archive globale disponible')
     globale = globales[which.max(globales$horodatage), ]
-    fichier = .legi_telecharger(globale$url, repertoire, verbose)
+    fichier = .legi_telecharger(globale$url, repertoire, verbose, db)
     importer_legi(fichier, db, verbose)
     DBI::dbWithTransaction(db, .legi_enregistrer(db, fichier, 0L))
     suivi = DBI::dbGetQuery(db, 'SELECT * FROM suivi.archives_legi')
@@ -313,7 +328,7 @@
     inventaire$horodatage > dernier, , drop = FALSE]
   quotidiennes = quotidiennes[order(quotidiennes$horodatage), , drop = FALSE]
   for (i in seq_len(nrow(quotidiennes))) {
-    fichier = .legi_telecharger(quotidiennes$url[i], repertoire, verbose)
+    fichier = .legi_telecharger(quotidiennes$url[i], repertoire, verbose, db)
     .legi_quotidienne(db, fichier, verbose)
   }
   invisible(NULL)

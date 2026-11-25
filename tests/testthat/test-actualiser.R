@@ -24,3 +24,14 @@ test_that("Les archives locales ne degradent pas une base existante", {
   expect_identical(parlementR:::.controle_archive_locale(con, "scrutins", zip, TRUE, TRUE), "identique")
   expect_false(parlementR:::.jeu_present(con, "questions_senat", "sen_questions"))
 })
+
+test_that("Les dates HTTP sont independantes de LC_TIME", {
+  ancienne = Sys.getlocale("LC_TIME")
+  x = sprintf("Tue, 01 %s 2026 12:00:00 GMT", month.abb)
+  attendu = as.POSIXct(sprintf("2026-%02d-01 12:00:00", 1:12), tz = "UTC")
+  expect_equal(parlementR:::.date_http(x), attendu)
+  expect_true(all(is.na(parlementR:::.date_http(c(NA_character_, "", "invalide")))))
+  expect_true(parlementR:::.date_http("Tue, 24 Nov 2026 16:00:00 GMT") >
+    parlementR:::.date_http("Fri, 13 Nov 2026 12:00:00 GMT"))
+  expect_identical(Sys.getlocale("LC_TIME"), ancienne)
+})

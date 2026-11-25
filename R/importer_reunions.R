@@ -1,7 +1,7 @@
 # Import des reunions de l'Assemblee nationale (agenda JSON).
 .importer_reunions = function(db, archive, verbose = TRUE) {
   journal = function(...) if (isTRUE(verbose)) message(
-    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [REUNIONS] ", ...)
+    "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [REUNIONS] ", ...)
   if (length(archive) != 1L || !file.exists(archive))
     stop("Archive des reunions introuvable")
   statut = system2("unzip", c("-tq", shQuote(archive)),

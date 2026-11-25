@@ -1,12 +1,12 @@
 # Donnees DILA / DOLE : stock global et mises a jour incrementales.
 .dole_journal = function(...) {
-  message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [DOLE] ", ...)
+  message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [DOLE] ", ...)
 }
 
 # Corpus officiel DOLE (DILA) : stock global puis archives incrementales.
 .dole_repertoire = "https://echanges.dila.gouv.fr/OPENDATA/DOLE/"
 
-.dole_telecharger = function(url, destination, verbose = TRUE) {
+.dole_telecharger = function(url, destination, verbose = TRUE, db = NULL) {
   if (verbose) .dole_journal("Archive : ", basename(destination))
   if (file.exists(destination) && isTRUE(file.info(destination)$size > 0)) {
     if (verbose) .dole_journal("Archive deja en cache")
@@ -21,6 +21,13 @@
   if (!identical(as.integer(statut), 0L) || !file.exists(tmp) ||
       file.info(tmp)$size == 0 || !file.rename(tmp, destination))
     stop("Telechargement DOLE impossible : ", url, call. = FALSE)
+  if (!is.null(db)) {
+    if (system2("gzip", c("-t", shQuote(destination)), stdout = FALSE, stderr = FALSE) != 0L) {
+      unlink(destination)
+      stop("Archive DOLE invalide : ", url)
+    }
+    .memoriser_telechargement(db, "dole", url, destination)
+  }
   if (verbose) .dole_journal("Telechargement termine : ", round(file.info(destination)$size / 1024^2, 1), " Mo")
   invisible(destination)
 }
@@ -135,6 +142,7 @@ importer_dole = function(db = NULL, cache = "/tmp/dila_dole",
   DBI::dbExecute(con, paste(
     "CREATE TABLE IF NOT EXISTS dila_dole.archives",
     "(nom VARCHAR PRIMARY KEY, md5 VARCHAR, nombre INTEGER, date_import TIMESTAMP)"))
+  DBI::dbExecute(con, "ALTER TABLE dila_dole.archives ADD COLUMN IF NOT EXISTS sha256 VARCHAR")
   globaux = grep("^Freemium_dole_global_", archives, value = TRUE)
   if (length(globaux) && !reimporter) {
     precedents = .db_get_tibble(con,
@@ -156,13 +164,17 @@ importer_dole = function(db = NULL, cache = "/tmp/dila_dole",
   for (nom in archives) {
     chemin = file.path(cache, nom)
     if (verbose) .dole_journal("Traitement : ", nom)
-    .dole_telecharger(paste0(.dole_repertoire, nom), chemin, verbose = verbose)
+    .dole_telecharger(paste0(.dole_repertoire, nom), chemin, verbose = verbose, db = con)
     empreinte = unname(tools::md5sum(chemin))
-    ancien = .db_get_tibble(con, "SELECT md5 FROM dila_dole.archives WHERE nom = ?", params = list(nom))
+    ancien = .db_get_tibble(con, "SELECT md5, sha256 FROM dila_dole.archives WHERE nom = ?", params = list(nom))
     if (nrow(ancien) && identical(ancien$md5[[1L]], empreinte)) {
+      if (is.na(ancien$sha256[1])) DBI::dbExecute(con,
+        "UPDATE dila_dole.archives SET sha256 = ? WHERE nom = ?",
+        params = list(.sha256_archive(chemin), nom))
       if (verbose) .dole_journal("Archive deja importee, ignoree : ", nom)
       next
     }
+    sha256 = .sha256_archive(chemin)
     if (verbose) .dole_journal("Debut de transaction : ", nom)
     DBI::dbBegin(con)
     valide = FALSE
@@ -170,8 +182,8 @@ importer_dole = function(db = NULL, cache = "/tmp/dila_dole",
       n = .dole_importer_archive(con, chemin, nom, verbose = verbose, progression = progression)
       DBI::dbExecute(con, "DELETE FROM dila_dole.archives WHERE nom = ?", params = list(nom))
       DBI::dbExecute(con, paste(
-        "INSERT INTO dila_dole.archives VALUES (?, ?, ?, CURRENT_TIMESTAMP)"),
-        params = list(nom, empreinte, n))
+        "INSERT INTO dila_dole.archives (nom, md5, sha256, nombre, date_import) VALUES (?, ?, ?, ?, (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))"),
+        params = list(nom, empreinte, sha256, n))
       DBI::dbCommit(con)
       valide = TRUE
       if (verbose) .dole_journal("Transaction validee : ", nom)
@@ -185,4 +197,14 @@ importer_dole = function(db = NULL, cache = "/tmp/dila_dole",
   if (verbose) .dole_journal("Termine : ", nrow(bilan), " archive(s) importee(s), ",
                        sum(bilan$dossiers), " dossier(s) traite(s)")
   invisible(bilan)
+}
+
+# DOLE est un ensemble d archives : pas d empreinte fictive au niveau du jeu.
+.completer_dole_sha256 = function(db, cache) {
+  x = DBI::dbGetQuery(db, "SELECT nom, md5 FROM dila_dole.archives WHERE sha256 IS NULL")
+  for (i in seq_len(nrow(x))) {
+    sha = .sha256_verifie(file.path(cache, x$nom[i]), x$md5[i])
+    if (!is.na(sha)) DBI::dbExecute(db,
+      "UPDATE dila_dole.archives SET sha256 = ? WHERE nom = ?", params = list(sha, x$nom[i]))
+  }
 }

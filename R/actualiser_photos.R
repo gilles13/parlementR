@@ -41,42 +41,65 @@
   valides = vapply(fichiers, .photo_jpeg, logical(1))
   precedent = DBI::dbGetQuery(db, paste0(
     "SELECT date_diff('second', coalesce(date_controle, date_import), ",
-    "current_localtimestamp()) / 3600.0 AS heures ",
+    "(current_timestamp AT TIME ZONE 'UTC')) / 3600.0 AS heures ",
     "FROM suivi.actualisations WHERE jeu = ?"), params = list(jeu))
   heures = if (nrow(precedent)) precedent$heures[1] else Inf
-  if (!forcer && all(valides) && is.finite(heures) && heures >= 0 && heures < 24) {
-    if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+  controle_complet = forcer || !is.finite(heures) || heures < 0 || heures >= 30 * 24
+  indices = if (controle_complet) seq_along(fichiers) else which(!valides)
+  if (!length(indices)) {
+    if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"),
                          "] [", toupper(jeu), "] Controle recent : aucun acces reseau")
     return(invisible(fichiers))
   }
-  # Le serveur repond 304 pour les fichiers inchanges. La destination n'est
-  # remplacee qu'apres un transfert complet, jamais pendant le telechargement.
-  commandes = vapply(seq_along(fichiers), function(i) {
-    fichier = fichiers[i]
-    temporaire = paste0(fichier, ".part")
-    condition = if (valides[i]) paste("-z", shQuote(fichier)) else ""
-    paste0("rm -f ", shQuote(temporaire), "; ",
-           "curl -fsSL -R --retry 3 --connect-timeout 30 ", condition,
-           " -o ", shQuote(temporaire), " ", shQuote(urls[i]),
-           " && { if test -s ", shQuote(temporaire),
-           "; then mv -f ", shQuote(temporaire), " ", shQuote(fichier),
-           "; fi; } ; resultat=$?; rm -f ", shQuote(temporaire),
-           "; exit $resultat")
-  }, character(1))
-  if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                       "] [", toupper(jeu), "] Synchronisation de ", length(commandes), " portraits")
-  statut = system2("xargs", c("-P", "8", "-I", "{}", "sh", "-c", shQuote("{}")),
-                   input = commandes)
+  # Un processus curl, avec un resultat individuel par transfert.
+  travail = tempfile(".photos-", tmpdir = dossier)
+  if (!dir.create(travail)) stop("Repertoire temporaire inaccessible")
+  on.exit(unlink(travail, recursive = TRUE), add = TRUE)
+  config = file.path(travail, "curl.conf")
+  resultats = file.path(travail, "resultats.txt")
+  temporaires = file.path(travail, paste0(indices, ".part"))
+  option = function(nom, valeur) {
+    paste0(nom, " = ", encodeString(valeur, quote = '"'))
+  }
+  blocs = lapply(seq_along(indices), function(j) {
+    i = indices[j]
+    c("fail", "location", "remote-time", "retry = 3",
+      "connect-timeout = 30",
+      option("url", urls[i]),
+      option("output", temporaires[j]),
+      if (valides[i]) option("time-cond", fichiers[i]),
+      option("write-out", paste0(j, " %{http_code} %{exitcode}\n")))
+  })
+  writeLines(paste(vapply(blocs, paste, "", collapse = "\n"),
+                   collapse = "\nnext\n"), config)
+  if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"),
+                       "] [", toupper(jeu), "] Synchronisation de ", length(indices), " portraits")
+  statut = system2("curl", c("--parallel", "--parallel-max", "8",
+                             "--config", shQuote(config)), stdout = resultats)
+  lignes = if (file.exists(resultats)) readLines(resultats, warn = FALSE) else character()
+  succes = rep(FALSE, length(indices))
+  for (j in seq_along(indices)) {
+    i = indices[j]
+    ligne = grep(paste0("^", j, " "), lignes, value = TRUE)
+    if (length(ligne) != 1L) next
+    if (identical(ligne, paste(j, "304 0")) && valides[i]) {
+      succes[j] = TRUE
+    } else if (identical(ligne, paste(j, "200 0")) && .photo_jpeg(temporaires[j])) {
+      succes[j] = file.rename(temporaires[j], fichiers[i])
+    }
+  }
   ok = vapply(fichiers, .photo_jpeg, logical(1))
-  if (!identical(as.integer(statut), 0L) || !all(ok))
+  if (!identical(as.integer(statut), 0L) || !all(succes) || !all(ok))
     stop(jeu, " : ", sum(ok), "/", length(ok), " JPEG valides ; ",
-         "matricules manquants : ", paste(ids[!ok], collapse = ", "))
-  DBI::dbExecute(db, paste0(
+         "transferts en echec : ", paste(ids[indices[!succes]], collapse = ", "),
+         " ; matricules manquants : ", paste(ids[!ok], collapse = ", "),
+         " ; statut curl : ", statut)
+  if (controle_complet) DBI::dbExecute(db, paste0(
     "INSERT INTO suivi.actualisations (jeu, date_import, date_controle) ",
-    "VALUES (?, current_timestamp, current_timestamp) ",
+    "VALUES (?, (current_timestamp AT TIME ZONE 'UTC'), (current_timestamp AT TIME ZONE 'UTC')) ",
     "ON CONFLICT (jeu) DO UPDATE SET date_controle = excluded.date_controle"),
     params = list(jeu))
-  if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+  if (verbose) message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"),
                        "] [", toupper(jeu), "] ", sum(ok), "/", length(ok), " JPEG valides")
   invisible(fichiers)
 }

@@ -125,7 +125,7 @@ cat_deputes = function(db = NULL, groupe = NULL, enrichie = FALSE, fichier = NUL
     error = function(e) NULL)
   disponible = function(x) length(x) && !is.na(x[1]) && nzchar(as.character(x[1]))
   date_maj = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$date_import))
-    format(as.POSIXct(suivi$date_import[1]), "%d/%m/%Y %H:%M") else "Non disponible"
+    format(as.POSIXct(suivi$date_import[1], tz = "UTC"), "%d/%m/%Y %H:%M %Z", tz = "Europe/Paris") else "Non disponible"
   empreinte = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$md5))
     as.character(suivi$md5[1]) else "Non disponible"
   empreinte_sha256 = if (!is.null(suivi) && nrow(suivi) && disponible(suivi$sha256))

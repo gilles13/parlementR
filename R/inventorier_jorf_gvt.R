@@ -99,7 +99,7 @@ inventorier_jorf_gvt = function(
       stringsAsFactors = FALSE
     )
     if (compteur %% 100000L == 0L)
-      message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"),
               "] [JORF] XML lus : ", compteur, "; candidats : ", length(resultat))
     invisible(NULL)
   }
@@ -132,7 +132,7 @@ inventorier_jorf_gvt = function(
   utils::write.table(tableau, temporaire, sep = ";", row.names = FALSE,
                      col.names = TRUE, quote = TRUE, fileEncoding = "UTF-8", na = "")
   if (!file.rename(temporaire, sortie)) stop("Impossible de finaliser l'inventaire")
-  message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] [JORF] ",
+  message("[", format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "Europe/Paris"), "] [JORF] ",
           n, " XML lus ; ", nrow(tableau), " candidats ; ", sortie)
   tableau
 }
